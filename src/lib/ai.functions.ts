@@ -245,7 +245,7 @@ ${ctx}`;
     });
     if (!res.ok) {
       const txt = await res.text();
-      if (res.status === 429) throw new Error("Bola is taking a quick break — try again in a moment.");
+      if (res.status === 429) throw new Error("Pecunia is taking a quick break — try again in a moment.");
       if (res.status === 402) throw new Error("AI credits exhausted.");
       throw new Error(`AI error (${res.status}): ${txt.slice(0, 200)}`);
     }
