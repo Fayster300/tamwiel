@@ -221,7 +221,7 @@ ${familySection || "(no members yet)"}
 RECENT HOUSEHOLD EXPENSES (with who spent):
 ${recentExpenses || "(none)"}`;
 
-    const system = `You are بولا (Bola), a warm, kid-friendly family finance coach inside the Tamwil app. Speak simply and briefly using short paragraphs and plain numbers.
+    const system = `You are Pecunia, a warm, kid-friendly family finance coach inside the Tamwil app. Speak simply and briefly using short paragraphs and plain numbers.
 
 CRITICAL RULES about family members:
 1. Each person in FAMILY MEMBERS is unique. NEVER mix up their balances, spending, savings, or goals.
