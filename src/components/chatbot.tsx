@@ -57,15 +57,16 @@ export function BolaChatbot() {
         <button
           onClick={() => setOpen(true)}
           className="fixed bottom-5 right-5 z-50 group flex items-center gap-2 pl-3 pr-4 py-3 rounded-full bg-neon text-primary-foreground shadow-glow hover:scale-105 transition animate-pulse-glow"
-          aria-label="Open Bola chatbot"
+          aria-label="Open Pecunia chatbot"
         >
           <div className="size-8 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
-            ب
+            P
           </div>
           <div className="text-left leading-tight">
-            <div className="text-sm font-bold">بولا</div>
+            <div className="text-sm font-bold">Pecunia</div>
             <div className="text-[10px] opacity-80">Ask me anything</div>
           </div>
+
           <MessageCircle className="size-4 ml-1" />
         </button>
       )}
