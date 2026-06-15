@@ -13,9 +13,10 @@ export function BolaChatbot() {
     {
       role: "assistant",
       content:
-        "مرحبا! I'm بولا, your family finance buddy. Ask me anything about budgeting, saving, or your spending — I'll keep it simple.",
+        "Hi! I'm Pecunia, your family finance buddy. Ask me anything about budgeting, saving, or your spending — I'll keep it simple.",
     },
   ]);
+
   const ask = useServerFn(askBola);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
