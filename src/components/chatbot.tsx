@@ -75,11 +75,12 @@ export function BolaChatbot() {
         <div className="fixed bottom-5 right-5 z-50 w-[min(380px,calc(100vw-2rem))] h-[min(560px,calc(100vh-4rem))] glass rounded-3xl flex flex-col overflow-hidden border border-primary/30 shadow-glow">
           <header className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-neon text-primary-foreground">
             <div className="size-10 rounded-full bg-white/25 flex items-center justify-center text-xl font-bold">
-              ب
+              P
             </div>
             <div className="flex-1 leading-tight">
-              <div className="font-bold">بولا · Bola</div>
+              <div className="font-bold">Pecunia</div>
               <div className="text-[11px] opacity-85">Your family finance helper</div>
+
             </div>
             <button
               onClick={() => setOpen(false)}
