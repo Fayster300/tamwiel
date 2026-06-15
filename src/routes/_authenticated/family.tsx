@@ -33,14 +33,24 @@ function Family() {
   const [busy, setBusy] = useState(false);
   const [rewardTarget, setRewardTarget] = useState<{ id: string; name: string } | null>(null);
 
-  // Balance per member = rewards received − expenses logged − savings deposited
+  // Balance per member = their starting account balance (entered at signup)
+  // + rewards received − expenses logged − savings deposited.
   const balances = useMemo(() => {
     const b: Record<string, number> = {};
+    for (const m of members) b[m.id] = Number(m.account_balance ?? 0);
     for (const r of rewards) b[r.to_profile_id] = (b[r.to_profile_id] ?? 0) + Number(r.amount);
     for (const e of expenses) b[e.profile_id] = (b[e.profile_id] ?? 0) - Number(e.amount);
     for (const s of savings) b[s.profile_id] = (b[s.profile_id] ?? 0) - Number(s.amount);
     return b;
-  }, [rewards, expenses, savings]);
+  }, [members, rewards, expenses, savings]);
+
+  // Actual amount each member has saved = sum of their entries in the savings table.
+  const savedByMember = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const s of savings) m[s.profile_id] = (m[s.profile_id] ?? 0) + Number(s.amount);
+    return m;
+  }, [savings]);
+
 
   async function handleRemove(id: string, name: string) {
     if (!confirm(`Remove ${name} from your household?`)) return;
