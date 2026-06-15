@@ -154,7 +154,7 @@ export const addExpense = createServerFn({ method: "POST" })
     const saved = (savings ?? []).reduce((a, r) => a + Number(r.amount), 0);
     const balance = Number(me.account_balance ?? 0) + credits - spent - saved;
     if (data.amount > balance) {
-      throw new Error(`Insufficient funds. Your available balance is AED ${balance.toFixed(2)}.`);
+      throw new Error(`Insufficient funds. Your available balance is Dh ${balance.toFixed(2)}.`);
     }
 
     const { error } = await supabase.from("expenses").insert({
@@ -200,7 +200,7 @@ export const addSaving = createServerFn({ method: "POST" })
       const saved = (savings ?? []).reduce((a, r) => a + Number(r.amount), 0);
       const balance = credits - spent - saved;
       if (data.amount > balance) {
-        throw new Error(`Insufficient funds. Your balance is AED ${balance.toFixed(2)}.`);
+        throw new Error(`Insufficient funds. Your balance is Dh ${balance.toFixed(2)}.`);
       }
     }
 
