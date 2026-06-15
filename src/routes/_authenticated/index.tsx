@@ -248,7 +248,7 @@ function Overview() {
   );
 }
 
-function KPI({ icon: Icon, label, value, delta, deltaWarn }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; delta: string; deltaWarn?: boolean }) {
+function KPI({ icon: Icon, label, value, delta, deltaWarn }: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode; delta: string; deltaWarn?: boolean }) {
   return (
     <div className="glass glass-hover rounded-3xl p-5 relative overflow-hidden">
       <div className="absolute -top-10 -right-10 size-32 rounded-full bg-neon opacity-20 blur-2xl" />
@@ -264,7 +264,7 @@ function KPI({ icon: Icon, label, value, delta, deltaWarn }: { icon: React.Compo
   );
 }
 
-function Pill({ label, value }: { label: string; value: string }) {
+function Pill({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl bg-white/[0.04] border border-white/[0.04] p-3">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
