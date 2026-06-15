@@ -6,6 +6,7 @@ import { RadialGauge } from "@/components/radial-gauge";
 import { BudgetEditor } from "@/components/budget-editor";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from "recharts";
 import { ArrowUpRight, TrendingUp, Wallet, PiggyBank, Activity } from "lucide-react";
+import { Money } from "@/components/dh";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Overview · Tamwil · Family Finance" }] }),
