@@ -205,7 +205,8 @@ function Overview() {
                       return <Cell key={entry.name} fill={CATEGORY_COLORS[c]} />;
                     })}
                   </Pie>
-                  <Tooltip contentStyle={{ background: "oklch(0.18 0.05 270)", border: "1px solid oklch(1 0 0 / 0.1)", borderRadius: 12 }} />
+                  <Tooltip contentStyle={{ background: "oklch(0.18 0.05 270)", border: "1px solid oklch(1 0 0 / 0.1)", borderRadius: 12, color: "#ffffff" }} itemStyle={{ color: "#ffffff" }} labelStyle={{ color: "#ffffff" }} formatter={(v: number, n: string) => [`AED ${Number(v).toFixed(0)}`, n]} />
+
                 </PieChart>
               </ResponsiveContainer>
             )}
