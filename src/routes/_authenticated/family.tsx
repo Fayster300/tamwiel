@@ -127,8 +127,9 @@ function Family() {
           {members.map((m) => {
             const isMe = m.id === profile?.id;
             const memberGoals = goals.filter((g) => g.profile_id === m.id);
-            const totalSaved = memberGoals.reduce((a, g) => a + Number(g.saved), 0);
+            const totalSaved = savedByMember[m.id] ?? 0;
             const totalTarget = memberGoals.reduce((a, g) => a + Number(g.target), 0);
+
             return (
               <div key={m.id} className="glass glass-hover rounded-3xl p-6 relative overflow-hidden">
                 <div className="absolute -top-16 -right-16 size-56 rounded-full bg-neon opacity-15 blur-3xl" />
