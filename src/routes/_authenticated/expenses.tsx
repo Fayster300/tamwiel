@@ -9,6 +9,7 @@ import { CATEGORY_COLORS, CATEGORY_ICONS, type Category } from "@/lib/finance-da
 import { ArrowUpDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptScanner } from "@/components/receipt-scanner";
+import { Dh, Money } from "@/components/dh";
 
 export const Route = createFileRoute("/_authenticated/expenses")({
   head: () => ({ meta: [{ title: "Expenses · Tamwil · Family Finance" }] }),
@@ -88,7 +89,7 @@ function ExpensesPage() {
           <ReceiptScanner />
           <div className="glass rounded-2xl px-4 py-3">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Your balance</div>
-            <div className={`text-2xl font-bold ${myBalance < 0 ? "text-destructive" : "text-gradient"}`}>AED {myBalance.toFixed(2)}</div>
+            <div className={`text-2xl font-bold ${myBalance < 0 ? "text-destructive" : "text-gradient"}`}><Money amount={myBalance} /></div>
           </div>
         </div>
       </div>
@@ -100,7 +101,7 @@ function ExpensesPage() {
           <input value={m.merchant} onChange={(e) => setM({ ...m, merchant: e.target.value })} placeholder="e.g. Whole Foods" className="w-full bg-white/5 rounded-lg px-3 py-2 outline-none text-sm border border-white/10 focus:border-primary/50" />
         </label>
         <label className="text-xs">
-          <div className="text-muted-foreground mb-1">Amount (AED)</div>
+          <div className="text-muted-foreground mb-1 inline-flex items-baseline gap-1">Amount (<Dh />)</div>
           <input value={m.amount} onChange={(e) => setM({ ...m, amount: e.target.value })} placeholder="0.00" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2 outline-none text-sm border border-white/10 focus:border-primary/50" />
         </label>
         <label className="text-xs">
@@ -117,8 +118,8 @@ function ExpensesPage() {
       <div className="glass rounded-3xl p-6">
         <div className="grid grid-cols-3 gap-3 mb-5">
           <Snap label="Transactions" value={String(totals.count)} />
-          <Snap label="Filtered total" value={`AED ${totals.sum.toFixed(2)}`} accent />
-          <Snap label="Largest" value={`AED ${filtered.length ? Math.max(...filtered.map((f) => Number(f.amount))).toFixed(2) : "0.00"}`} />
+          <Snap label="Filtered total" value={<Money amount={totals.sum} />} accent />
+          <Snap label="Largest" value={<Money amount={filtered.length ? Math.max(...filtered.map((f) => Number(f.amount))) : 0} />} />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -153,7 +154,7 @@ function ExpensesPage() {
                 <span className="hidden sm:inline text-[10px] uppercase tracking-widest px-2 py-1 rounded-full" style={{ background: `${CATEGORY_COLORS[cat]}22`, color: CATEGORY_COLORS[cat] }}>
                   {e.category}
                 </span>
-                <div className="font-semibold w-24 text-right">−AED {Number(e.amount).toFixed(2)}</div>
+                <div className="font-semibold w-24 text-right"><Money amount={Number(e.amount)} sign="-" /></div>
                 {canDelete && (
                   <button onClick={() => remove(e.id)} className="size-8 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center">
                     <Trash2 className="size-3.5" />
@@ -168,7 +169,7 @@ function ExpensesPage() {
   );
 }
 
-function Snap({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Snap({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
   return (
     <div className={`rounded-xl p-3 border ${accent ? "bg-neon/15 border-info/30" : "bg-white/[0.04] border-white/[0.05]"}`}>
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>

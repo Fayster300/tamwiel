@@ -5,6 +5,7 @@ import { scanReceipt } from "@/lib/ai.functions";
 import { addExpense } from "@/lib/household.functions";
 import { Camera, Loader2, X, Check, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Money } from "@/components/dh";
 
 type Item = { name: string; amount: number; category: string; include: boolean };
 
@@ -179,7 +180,7 @@ export function ReceiptScanner() {
             <footer className="px-5 py-4 border-t border-white/10 flex items-center justify-between gap-3">
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total to add</div>
-                <div className="text-xl font-bold text-gradient">AED {total.toFixed(2)}</div>
+                <div className="text-xl font-bold text-gradient"><Money amount={total} /></div>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={pick} className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm flex items-center gap-1.5">

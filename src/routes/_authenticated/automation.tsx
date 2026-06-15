@@ -8,6 +8,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
+import { Money } from "@/components/dh";
 
 export const Route = createFileRoute("/_authenticated/automation")({
   head: () => ({ meta: [{ title: "Automation Demo · Tamwil · Family Finance" }] }),
@@ -125,7 +126,7 @@ function AutoBillSection() {
                   <div className="size-10 rounded-xl bg-white/10 flex items-center justify-center"><Icon className="size-5" /></div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm">{b.name}</div>
-                    <div className="text-[11px] text-muted-foreground">Due {b.due} of month · AED {b.amount.toLocaleString()}</div>
+                    <div className="text-[11px] text-muted-foreground inline-flex items-baseline gap-1">Due {b.due} of month · <Money amount={b.amount} decimals={0} /></div>
                   </div>
                   <div className="text-xs font-semibold inline-flex items-center gap-1.5">
                     {b.status === "scheduled" && (<><Clock className="size-3.5 text-muted-foreground" /> Scheduled</>)}
@@ -142,13 +143,13 @@ function AutoBillSection() {
         <Card>
           <CardHeader title="This month" />
           <div className="space-y-3 mt-2">
-            <Stat label="Bills scheduled" value={`AED ${total.toLocaleString()}`} />
-            <Stat label="Auto-paid so far" value={`AED ${paid.toLocaleString()}`} tone="ok" />
-            <Stat label="Pending" value={`AED ${(total - paid).toLocaleString()}`} />
+            <Stat label="Bills scheduled" value={<Money amount={total} decimals={0} />} />
+            <Stat label="Auto-paid so far" value={<Money amount={paid} decimals={0} />} tone="ok" />
+            <Stat label="Pending" value={<Money amount={total - paid} decimals={0} />} />
             <div className="h-3 rounded-full bg-white/10 overflow-hidden">
               <div className="h-full bg-gradient-to-r from-success to-secondary transition-all" style={{ width: `${(paid / total) * 100}%` }} />
             </div>
-            <p className="text-[11px] text-muted-foreground">Late-fee savings estimated this month: <span className="text-success font-semibold">AED 75</span></p>
+            <p className="text-[11px] text-muted-foreground inline-flex items-baseline gap-1">Late-fee savings estimated this month: <span className="text-success font-semibold inline-flex items-baseline gap-1"><Money amount={75} decimals={0} /></span></p>
           </div>
         </Card>
       </div>
@@ -221,7 +222,7 @@ function CardHeader({ title, subtitle, right }: { title: string; subtitle?: stri
     </div>
   );
 }
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" }) {
+function Stat({ label, value, tone }: { label: string; value: React.ReactNode; tone?: "ok" }) {
   return (
     <div className="flex items-center justify-between">
       <div className="text-xs text-muted-foreground">{label}</div>

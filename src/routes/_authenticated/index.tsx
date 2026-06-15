@@ -6,6 +6,7 @@ import { RadialGauge } from "@/components/radial-gauge";
 import { BudgetEditor } from "@/components/budget-editor";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from "recharts";
 import { ArrowUpRight, TrendingUp, Wallet, PiggyBank, Activity } from "lucide-react";
+import { Money } from "@/components/dh";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Overview · Tamwil · Family Finance" }] }),
@@ -123,10 +124,10 @@ function Overview() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPI icon={Wallet} label="This month" value={`AED ${thisMonthTotal.toFixed(0)}`} delta={lastMonthTotal ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% vs last` : "First month of data"} deltaWarn={change > 0} />
+        <KPI icon={Wallet} label="This month" value={<Money amount={thisMonthTotal} decimals={0} />} delta={lastMonthTotal ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% vs last` : "First month of data"} deltaWarn={change > 0} />
         <KPI icon={Activity} label="Transactions" value={String(expenses.length)} delta={`${expenses.filter((e) => monthOf(e.expense_date) === thisMonth).length} this month`} />
-        <KPI icon={PiggyBank} label="Saved" value={`AED ${householdSaved.toFixed(0)}`} delta={householdSaved === 0 ? "Set aside your first deposit" : `${savings.length} deposits total`} />
-        <KPI icon={TrendingUp} label="Projected" value={`AED ${projected.toFixed(0)}`} delta="3-month average" />
+        <KPI icon={PiggyBank} label="Saved" value={<Money amount={householdSaved} decimals={0} />} delta={householdSaved === 0 ? "Set aside your first deposit" : `${savings.length} deposits total`} />
+        <KPI icon={TrendingUp} label="Projected" value={<Money amount={projected} decimals={0} />} delta="3-month average" />
       </div>
 
       <BudgetEditor />
@@ -156,7 +157,7 @@ function Overview() {
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <TrendingUp className="size-4 text-info" />
-              Projected: <span className="font-semibold text-foreground">AED {projected.toFixed(0)}</span>
+              Projected: <span className="font-semibold text-foreground"><Money amount={projected} decimals={0} /></span>
             </div>
           </div>
           <div className="h-72">
@@ -181,10 +182,10 @@ function Overview() {
             )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-            <Pill label="Avg/day" value={`AED ${(thisMonthTotal / 30).toFixed(0)}`} />
-            <Pill label="Largest" value={`AED ${expenses.length ? Math.max(...expenses.map((e) => Number(e.amount))).toFixed(0) : "0"}`} />
+            <Pill label="Avg/day" value={<Money amount={thisMonthTotal / 30} decimals={0} />} />
+            <Pill label="Largest" value={<Money amount={expenses.length ? Math.max(...expenses.map((e) => Number(e.amount))) : 0} decimals={0} />} />
             <Pill label="Categories" value={String(new Set(expenses.map((e) => e.category)).size)} />
-            <Pill label="Saved" value={`AED ${householdSaved.toFixed(0)}`} />
+            <Pill label="Saved" value={<Money amount={householdSaved} decimals={0} />} />
           </div>
         </div>
       </div>
@@ -205,7 +206,7 @@ function Overview() {
                       return <Cell key={entry.name} fill={CATEGORY_COLORS[c]} />;
                     })}
                   </Pie>
-                  <Tooltip contentStyle={{ background: "oklch(0.18 0.05 270)", border: "1px solid oklch(1 0 0 / 0.1)", borderRadius: 12, color: "#ffffff" }} itemStyle={{ color: "#ffffff" }} labelStyle={{ color: "#ffffff" }} formatter={(v: number, n: string) => [`AED ${Number(v).toFixed(0)}`, n]} />
+                  <Tooltip contentStyle={{ background: "oklch(0.18 0.05 270)", border: "1px solid oklch(1 0 0 / 0.1)", borderRadius: 12, color: "#ffffff" }} itemStyle={{ color: "#ffffff" }} labelStyle={{ color: "#ffffff" }} formatter={(v: number, n: string) => [`Dh ${Number(v).toFixed(0)}`, n]} />
 
                 </PieChart>
               </ResponsiveContainer>
@@ -236,7 +237,7 @@ function Overview() {
                     <div className="font-medium text-sm truncate">{e.merchant}</div>
                     <div className="text-[11px] text-muted-foreground">{e.expense_date} · {e.category}</div>
                   </div>
-                  <div className="font-semibold text-sm">−AED {Number(e.amount).toFixed(2)}</div>
+                  <div className="font-semibold text-sm"><Money amount={Number(e.amount)} sign="-" /></div>
                 </div>
               );
             })}
@@ -247,7 +248,7 @@ function Overview() {
   );
 }
 
-function KPI({ icon: Icon, label, value, delta, deltaWarn }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; delta: string; deltaWarn?: boolean }) {
+function KPI({ icon: Icon, label, value, delta, deltaWarn }: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode; delta: string; deltaWarn?: boolean }) {
   return (
     <div className="glass glass-hover rounded-3xl p-5 relative overflow-hidden">
       <div className="absolute -top-10 -right-10 size-32 rounded-full bg-neon opacity-20 blur-2xl" />
@@ -263,7 +264,7 @@ function KPI({ icon: Icon, label, value, delta, deltaWarn }: { icon: React.Compo
   );
 }
 
-function Pill({ label, value }: { label: string; value: string }) {
+function Pill({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl bg-white/[0.04] border border-white/[0.04] p-3">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>

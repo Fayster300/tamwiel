@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Target, Wallet, Sparkles, Crown, Users, Copy, Check, Banknote } from "lucide-react";
 import avatarMale from "@/assets/avatar-male.png";
 import avatarFemale from "@/assets/avatar-female.png";
+import { Dh } from "@/components/dh";
 
 const MEMBER_ROLES = ["Mom", "Dad", "Child", "Teen", "Grandparent", "Sibling", "Other"];
 
@@ -250,7 +251,7 @@ export function OnboardingModal() {
                 <input autoFocus value={goalName} onChange={(e) => setGoalName(e.target.value)} placeholder="Family vacation, emergency fund…" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
               <div className="h-3" />
-              <Field label="Target amount (AED)">
+              <Field label={<>Target amount (<Dh />)</>}>
                 <input value={goalAmt} onChange={(e) => setGoalAmt(e.target.value)} placeholder="5000" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
             </div>
@@ -264,7 +265,7 @@ export function OnboardingModal() {
                 <h3 className="font-semibold">Monthly budget</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">How much can your household spend per month?</p>
-              <Field label="Monthly budget (AED)">
+              <Field label={<>Monthly budget (<Dh />)</>}>
                 <input autoFocus value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="8000" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
             </div>
@@ -280,7 +281,7 @@ export function OnboardingModal() {
               <p className="text-sm text-muted-foreground mb-4">
                 How much money is in your account right now? Expenses you log will be deducted from this balance — you'll get an error if you try to spend more than you have.
               </p>
-              <Field label="Current balance (AED)">
+              <Field label={<>Current balance (<Dh />)</>}>
                 <input autoFocus value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="1000" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
             </div>
@@ -343,7 +344,7 @@ function AvatarPick({ active, onClick, src, label }: { active: boolean; onClick:
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
       <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1.5">{label}</div>
