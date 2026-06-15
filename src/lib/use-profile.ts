@@ -53,6 +53,7 @@ export interface HouseholdMember {
   avatar_url: string | null;
   gender: "male" | "female" | null;
   member_role: string | null;
+  account_balance: number;
 }
 
 export function useHouseholdMembers(householdId: string | undefined) {
@@ -62,7 +63,7 @@ export function useHouseholdMembers(householdId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, username, role, link_code, avatar_url, gender, member_role")
+        .select("id, full_name, username, role, link_code, avatar_url, gender, member_role, account_balance")
         .eq("household_id", householdId!)
         .order("role", { ascending: true });
       if (error) throw error;
@@ -70,6 +71,7 @@ export function useHouseholdMembers(householdId: string | undefined) {
     },
   });
 }
+
 
 export interface Reward {
   id: string;
