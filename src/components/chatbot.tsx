@@ -110,7 +110,7 @@ export function BolaChatbot() {
             ))}
             {busy && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" /> بولا is thinking…
+                <Loader2 className="size-3.5 animate-spin" /> Pecunia is thinking…
               </div>
             )}
             <div ref={endRef} />
