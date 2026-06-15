@@ -7,6 +7,7 @@ import { useProfile, useHouseholdSavings, useHouseholdExpenses, useRewards, useH
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PiggyBank, Plus, Trash2 } from "lucide-react";
+import { Dh, Money } from "@/components/dh";
 
 export const Route = createFileRoute("/_authenticated/savings")({
   head: () => ({ meta: [{ title: "Savings · Tamwil · Family Finance" }] }),
@@ -54,7 +55,7 @@ function SavingsPage() {
     setBusy(true);
     try {
       await addSave({ data: { amount: a, note: note.trim() || undefined } });
-      toast.success(`Saved AED ${a.toFixed(2)}`);
+      toast.success(`Saved Dh ${a.toFixed(2)}`);
       setAmount("");
       setNote("");
       qc.invalidateQueries({ queryKey: ["savings"] });
@@ -82,14 +83,14 @@ function SavingsPage() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
-        <Stat label="My total saved" value={`AED ${mySaved.toFixed(2)}`} accent />
-        <Stat label="Available balance" value={`AED ${balance.toFixed(2)}`} />
-        <Stat label="Household saved" value={`AED ${householdSaved.toFixed(2)}`} />
+        <Stat label="My total saved" value={<Money amount={mySaved} />} accent />
+        <Stat label="Available balance" value={<Money amount={balance} />} />
+        <Stat label="Household saved" value={<Money amount={householdSaved} />} />
       </div>
 
       <form onSubmit={submit} className="glass rounded-3xl p-6 grid sm:grid-cols-[160px_1fr_auto] gap-3 items-end">
         <label className="text-xs">
-          <div className="text-muted-foreground mb-1">Amount (AED)</div>
+          <div className="text-muted-foreground mb-1 inline-flex items-baseline gap-1">Amount (<Dh />)</div>
           <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/50" />
         </label>
         <label className="text-xs">
@@ -119,7 +120,7 @@ function SavingsPage() {
                   <div className="font-medium text-sm truncate">{s.note || "Savings deposit"}</div>
                   <div className="text-[11px] text-muted-foreground">{new Date(s.created_at).toLocaleString()}</div>
                 </div>
-                <div className="font-semibold text-gradient">+AED {Number(s.amount).toFixed(2)}</div>
+                <div className="font-semibold text-gradient"><Money amount={Number(s.amount)} sign="+" /></div>
                 <button onClick={() => remove(s.id)} className="size-8 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center">
                   <Trash2 className="size-3.5" />
                 </button>
@@ -144,7 +145,7 @@ function SavingsPage() {
                     <div className="font-medium text-sm truncate">{who?.full_name || who?.username || "Member"}</div>
                     <div className="text-[11px] text-muted-foreground">{s.note || "Savings"} · {new Date(s.created_at).toLocaleDateString()}</div>
                   </div>
-                  <div className="font-semibold">AED {Number(s.amount).toFixed(2)}</div>
+                  <div className="font-semibold"><Money amount={Number(s.amount)} /></div>
                 </div>
               );
             })}
@@ -155,7 +156,7 @@ function SavingsPage() {
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Stat({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
   return (
     <div className={`glass rounded-2xl p-5 border ${accent ? "border-info/30" : "border-white/[0.05]"}`}>
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>

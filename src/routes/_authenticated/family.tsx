@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import avatarMale from "@/assets/avatar-male.png";
 import avatarFemale from "@/assets/avatar-female.png";
 import { Trophy, Target, Sparkles, UserPlus, Crown, Gift, X, UserMinus } from "lucide-react";
+import { Dh, Money } from "@/components/dh";
 
 export const Route = createFileRoute("/_authenticated/family")({
   head: () => ({ meta: [{ title: "Family Hub · Tamwil · Family Finance" }] }),
@@ -92,7 +93,7 @@ function Family() {
         {!isOwner && profile && (
           <div className="glass rounded-2xl px-4 py-3">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Your balance</div>
-            <div className="text-2xl font-bold text-gradient">AED {(balances[profile.id] ?? 0).toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gradient"><Money amount={balances[profile.id] ?? 0} /></div>
           </div>
         )}
       </div>
@@ -162,8 +163,8 @@ function Family() {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 relative">
-                  <Stat label="Balance" value={`AED ${(balances[m.id] ?? 0).toFixed(2)}`} accent />
-                  <Stat label="Saved" value={`AED ${totalSaved.toFixed(0)}`} />
+                  <Stat label="Balance" value={<Money amount={balances[m.id] ?? 0} />} accent />
+                  <Stat label="Saved" value={<Money amount={totalSaved} decimals={0} />} />
                 </div>
 
                 {memberGoals.length > 0 && (
@@ -176,7 +177,7 @@ function Family() {
                           <div key={g.id}>
                             <div className="flex justify-between text-xs mb-1">
                               <span className="truncate">{g.name}</span>
-                              <span className="text-muted-foreground">AED {Number(g.saved).toFixed(0)} / {Number(g.target).toFixed(0)}</span>
+                              <span className="text-muted-foreground inline-flex items-baseline gap-1"><Dh /> {Number(g.saved).toFixed(0)} / {Number(g.target).toFixed(0)}</span>
                             </div>
                             <div className="h-2 rounded-full bg-white/5 overflow-hidden">
                               <div className="h-full bg-neon shadow-glow" style={{ width: `${pct}%` }} />
@@ -233,7 +234,7 @@ function Family() {
                     <div className="font-medium text-sm truncate">{to?.full_name || to?.username || "Member"}</div>
                     <div className="text-[11px] text-muted-foreground truncate">{r.note || "Reward"} · {new Date(r.created_at).toLocaleDateString()}</div>
                   </div>
-                  <div className="font-bold text-gradient">+AED {Number(r.amount).toFixed(2)}</div>
+                  <div className="font-bold text-gradient"><Money amount={Number(r.amount)} sign="+" /></div>
                 </div>
               );
             })}
@@ -254,7 +255,7 @@ function Family() {
                 {i + 1}
               </div>
               <div className="flex-1 font-medium">{m.full_name || m.username}</div>
-              <div className="font-bold text-gradient">AED {(balances[m.id] ?? 0).toFixed(2)}</div>
+              <div className="font-bold text-gradient"><Money amount={balances[m.id] ?? 0} /></div>
             </div>
           ))}
         </div>
@@ -267,7 +268,7 @@ function Family() {
           onSend={async (amount, note) => {
             try {
               await reward({ data: { to_profile_id: rewardTarget.id, amount, note: note || undefined } });
-              toast.success(`Sent AED ${amount.toFixed(2)} to ${rewardTarget.name}`);
+              toast.success(`Sent Dh ${amount.toFixed(2)} to ${rewardTarget.name}`);
               setRewardTarget(null);
               qc.invalidateQueries({ queryKey: ["rewards"] });
             } catch (err) {
@@ -301,7 +302,7 @@ function RewardModal({ targetName, onClose, onSend }: { targetName: string; onCl
         <p className="text-xs text-muted-foreground mt-1">The amount will be added to their balance.</p>
         <form onSubmit={submit} className="mt-4 space-y-3">
           <label className="block">
-            <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1.5">Amount (AED)</div>
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1.5 inline-flex items-baseline gap-1">Amount (<Dh />)</div>
             <input autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="50.00" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
           </label>
           <label className="block">
@@ -317,7 +318,7 @@ function RewardModal({ targetName, onClose, onSend }: { targetName: string; onCl
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Stat({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
   return (
     <div className={`rounded-xl p-3 text-center border ${accent ? "bg-neon/15 border-info/30" : "bg-white/[0.04] border-white/[0.05]"}`}>
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>

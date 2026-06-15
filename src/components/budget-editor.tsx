@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Wallet, Pencil, Check, X, Target } from "lucide-react";
+import { Dh, Money } from "@/components/dh";
 import { updateHouseholdBudget } from "@/lib/household.functions";
 import { useProfile } from "@/lib/use-profile";
 
@@ -78,19 +79,19 @@ export function BudgetEditor() {
 
       {!editing ? (
         <div className="grid grid-cols-2 gap-3">
-          <Stat icon={<Wallet className="size-4 text-info" />} label="Monthly budget" value={currentBudget != null ? `AED ${Number(currentBudget).toFixed(0)}` : "Not set"} />
-          <Stat icon={<Target className="size-4 text-success" />} label={currentGoalName || "Savings goal"} value={currentGoal != null ? `AED ${Number(currentGoal).toFixed(0)}` : "Not set"} />
+          <Stat icon={<Wallet className="size-4 text-info" />} label="Monthly budget" value={currentBudget != null ? <Money amount={Number(currentBudget)} decimals={0} /> : "Not set"} />
+          <Stat icon={<Target className="size-4 text-success" />} label={currentGoalName || "Savings goal"} value={currentGoal != null ? <Money amount={Number(currentGoal)} decimals={0} /> : "Not set"} />
         </div>
       ) : (
         <div className="space-y-3">
-          <FieldRow label="Monthly budget (AED)">
+          <FieldRow label={<>Monthly budget (<Dh />)</>}>
             <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" placeholder="8000" className="w-full bg-white/5 rounded-lg px-3 py-2 outline-none text-sm border border-white/10 focus:border-primary/60" />
           </FieldRow>
           <div className="grid grid-cols-2 gap-3">
             <FieldRow label="Goal name">
               <input value={goalName} onChange={(e) => setGoalName(e.target.value)} placeholder="Family vacation" className="w-full bg-white/5 rounded-lg px-3 py-2 outline-none text-sm border border-white/10 focus:border-primary/60" />
             </FieldRow>
-            <FieldRow label="Goal target (AED)">
+            <FieldRow label={<>Goal target (<Dh />)</>}>
               <input value={goal} onChange={(e) => setGoal(e.target.value)} inputMode="decimal" placeholder="5000" className="w-full bg-white/5 rounded-lg px-3 py-2 outline-none text-sm border border-white/10 focus:border-primary/60" />
             </FieldRow>
           </div>
@@ -100,7 +101,7 @@ export function BudgetEditor() {
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-2xl bg-white/[0.04] border border-white/[0.05] p-3">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">{icon}{label}</div>
@@ -108,7 +109,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
     </div>
   );
 }
-function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+function FieldRow({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{label}</div>
