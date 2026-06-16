@@ -143,6 +143,63 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_passkeys: {
+        Row: {
+          counter: number
+          created_at: string
+          credential_id: string
+          device_label: string | null
+          id: string
+          last_used_at: string | null
+          public_key: string
+          transports: string | null
+          user_id: string
+        }
+        Insert: {
+          counter?: number
+          created_at?: string
+          credential_id: string
+          device_label?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key: string
+          transports?: string | null
+          user_id: string
+        }
+        Update: {
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          device_label?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key?: string
+          transports?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      passkey_challenges: {
+        Row: {
+          challenge: string
+          created_at: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          challenge: string
+          created_at?: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          challenge?: string
+          created_at?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_balance: number
@@ -192,6 +249,148 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          household_id: string
+          id: string
+          meta: Json | null
+          quest_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          household_id: string
+          id?: string
+          meta?: Json | null
+          quest_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          meta?: Json | null
+          quest_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_audit_log_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_audit_log_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_proofs: {
+        Row: {
+          created_at: string
+          id: string
+          image_path: string
+          quest_id: string
+          uploader_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_path: string
+          quest_id: string
+          uploader_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_path?: string
+          quest_id?: string
+          uploader_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_proofs_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quests: {
+        Row: {
+          assignee_id: string
+          completed_at: string | null
+          created_at: string
+          decided_at: string | null
+          description: string | null
+          due_date: string | null
+          household_id: string
+          id: string
+          owner_id: string
+          rejection_reason: string | null
+          reward: number
+          savings_split_pct: number | null
+          status: Database["public"]["Enums"]["quest_status"]
+          submitted_notes: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id: string
+          completed_at?: string | null
+          created_at?: string
+          decided_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          household_id: string
+          id?: string
+          owner_id: string
+          rejection_reason?: string | null
+          reward: number
+          savings_split_pct?: number | null
+          status?: Database["public"]["Enums"]["quest_status"]
+          submitted_notes?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string
+          completed_at?: string | null
+          created_at?: string
+          decided_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          household_id?: string
+          id?: string
+          owner_id?: string
+          rejection_reason?: string | null
+          reward?: number
+          savings_split_pct?: number | null
+          status?: Database["public"]["Enums"]["quest_status"]
+          submitted_notes?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quests_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
@@ -293,6 +492,62 @@ export type Database = {
           },
         ]
       }
+      scheduled_payments: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          frequency: string
+          household_id: string
+          icon: string | null
+          id: string
+          last_paid_at: string | null
+          last_reminded_on: string | null
+          name: string
+          next_due_date: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          frequency?: string
+          household_id: string
+          icon?: string | null
+          id?: string
+          last_paid_at?: string | null
+          last_reminded_on?: string | null
+          name: string
+          next_due_date: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          frequency?: string
+          household_id?: string
+          icon?: string | null
+          id?: string
+          last_paid_at?: string | null
+          last_reminded_on?: string | null
+          name?: string
+          next_due_date?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_payments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -302,7 +557,13 @@ export type Database = {
       is_household_owner: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      quest_status:
+        | "pending_acceptance"
+        | "declined"
+        | "accepted"
+        | "submitted"
+        | "approved"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -429,6 +690,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      quest_status: [
+        "pending_acceptance",
+        "declined",
+        "accepted",
+        "submitted",
+        "approved",
+        "rejected",
+      ],
+    },
   },
 } as const
