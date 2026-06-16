@@ -126,6 +126,7 @@ function Insights() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">What this means: where your total savings could grow over the next 6 months if you keep setting aside the same amount you have been recently.</p>
           {s.goal > 0 && s.monthsToGoal != null && (
             <p className="text-xs text-muted-foreground mt-2">🎯 Reaches AED {s.goal.toFixed(0)} ({s.goalName ?? "your goal"}) in ~{Math.ceil(s.monthsToGoal)} months.</p>
           )}
