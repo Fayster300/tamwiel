@@ -19,7 +19,7 @@ import {
   Users,
   Menu,
   X,
-  Search,
+  
   Bell,
   LogOut,
   Copy,
