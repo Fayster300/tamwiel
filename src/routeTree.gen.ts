@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSavingsRouteImport } from './routes/_authenticated/savings'
+import { Route as AuthenticatedQuestsRouteImport } from './routes/_authenticated/quests'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
 import { Route as AuthenticatedFamilyRouteImport } from './routes/_authenticated/family'
@@ -42,6 +43,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedSavingsRoute = AuthenticatedSavingsRouteImport.update({
   id: '/savings',
   path: '/savings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedQuestsRoute = AuthenticatedQuestsRouteImport.update({
+  id: '/quests',
+  path: '/quests',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/family': typeof AuthenticatedFamilyRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/quests': typeof AuthenticatedQuestsRoute
   '/savings': typeof AuthenticatedSavingsRoute
 }
 export interface FileRoutesByTo {
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/family': typeof AuthenticatedFamilyRoute
   '/insights': typeof AuthenticatedInsightsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/quests': typeof AuthenticatedQuestsRoute
   '/savings': typeof AuthenticatedSavingsRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_authenticated/family': typeof AuthenticatedFamilyRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/quests': typeof AuthenticatedQuestsRoute
   '/_authenticated/savings': typeof AuthenticatedSavingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/insights'
     | '/profile'
+    | '/quests'
     | '/savings'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/insights'
     | '/profile'
+    | '/quests'
     | '/savings'
     | '/'
   id:
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/family'
     | '/_authenticated/insights'
     | '/_authenticated/profile'
+    | '/_authenticated/quests'
     | '/_authenticated/savings'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -185,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSavingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/quests': {
+      id: '/_authenticated/quests'
+      path: '/quests'
+      fullPath: '/quests'
+      preLoaderRoute: typeof AuthenticatedQuestsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -229,6 +248,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFamilyRoute: typeof AuthenticatedFamilyRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedQuestsRoute: typeof AuthenticatedQuestsRoute
   AuthenticatedSavingsRoute: typeof AuthenticatedSavingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -239,6 +259,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFamilyRoute: AuthenticatedFamilyRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedQuestsRoute: AuthenticatedQuestsRoute,
   AuthenticatedSavingsRoute: AuthenticatedSavingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
@@ -254,13 +275,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

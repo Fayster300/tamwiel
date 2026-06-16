@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import avatarMale from "@/assets/avatar-male.png";
 import avatarFemale from "@/assets/avatar-female.png";
+import { NotificationBell } from "./notification-bell";
 import {
   LayoutDashboard,
   Receipt,
@@ -19,20 +20,20 @@ import {
   Users,
   Menu,
   X,
-  
-  Bell,
   LogOut,
   Copy,
   User,
   Crown,
   PiggyBank,
   Zap,
+  Trophy,
 } from "lucide-react";
 
 const links = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
   { to: "/expenses", label: "Expenses", icon: Receipt },
   { to: "/savings", label: "Savings", icon: PiggyBank },
+  { to: "/quests", label: "Quests", icon: Trophy },
   { to: "/insights", label: "AI Insights", icon: Sparkles },
   { to: "/automation", label: "Automation", icon: Zap },
   { to: "/family", label: "Family Hub", icon: Users },
@@ -182,13 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Menu className="size-4" />
                 </button>
                 <div className="flex-1" />
-                <button
-                  onClick={() => toast.info("No new notifications", { description: "You're all caught up." })}
-                  className="relative size-9 rounded-lg glass flex items-center justify-center hover:scale-105 transition"
-                >
-                  <Bell className="size-4" />
-                  <span className="absolute top-2 right-2 size-1.5 rounded-full bg-neon" />
-                </button>
+                <NotificationBell />
 
                 {/* User menu */}
                 <div className="relative" data-user-menu>

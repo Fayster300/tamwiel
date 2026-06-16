@@ -16,47 +16,65 @@ export function ReceiptScanner() {
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [merchant, setMerchant] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const scan = useServerFn(scanReceipt);
   const addExp = useServerFn(addExpense);
   const qc = useQueryClient();
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
-  function pick() {
-    fileRef.current?.click();
-  }
+  function pickCamera() { cameraRef.current?.click(); }
+  function pickFiles() { fileRef.current?.click(); }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (f.size > 8 * 1024 * 1024) return toast.error("File too big (max 8 MB).");
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    const valid = files.filter((f) => {
+      if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name}: file too big (max 8 MB).`); return false; }
+      return true;
+    }).slice(0, 5);
+    if (valid.length === 0) return;
+
     setBusy(true);
     setItems([]);
     setMerchant("");
     setOpen(true);
+    setProgress({ done: 0, total: valid.length });
+
     try {
-      const b64 = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
-        r.onerror = reject;
-        r.readAsDataURL(f);
-      });
-      const res = await scan({ data: { image_base64: b64, mime_type: f.type || "image/jpeg" } });
-      setMerchant(res.merchant);
-      setItems(
-        res.items.map((i) => ({
-          name: i.name,
-          amount: i.amount,
-          category: CATS.includes(i.category) ? i.category : "Shopping",
-          include: true,
-        })),
-      );
-      if (res.items.length === 0) toast.message("No items found", { description: "Try a clearer photo." });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Scan failed");
-      setOpen(false);
+      const allItems: Item[] = [];
+      const merchants: string[] = [];
+      for (let i = 0; i < valid.length; i++) {
+        const f = valid[i];
+        const b64 = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
+          r.onerror = reject;
+          r.readAsDataURL(f);
+        });
+        try {
+          const res = await scan({ data: { image_base64: b64, mime_type: f.type || "image/jpeg" } });
+          if (res.merchant) merchants.push(res.merchant);
+          for (const it of res.items) {
+            allItems.push({
+              name: `${res.merchant ? res.merchant + ": " : ""}${it.name}`,
+              amount: it.amount,
+              category: CATS.includes(it.category) ? it.category : "Shopping",
+              include: true,
+            });
+          }
+        } catch (err) {
+          toast.error(`Receipt ${i + 1}: ${err instanceof Error ? err.message : "scan failed"}`);
+        }
+        setProgress({ done: i + 1, total: valid.length });
+      }
+      setMerchant(merchants.length > 1 ? `${merchants.length} receipts` : (merchants[0] ?? "Receipts"));
+      setItems(allItems);
+      if (allItems.length === 0) toast.message("No items found", { description: "Try clearer photos." });
     } finally {
       setBusy(false);
+      setProgress(null);
       if (fileRef.current) fileRef.current.value = "";
+      if (cameraRef.current) cameraRef.current.value = "";
     }
   }
 
