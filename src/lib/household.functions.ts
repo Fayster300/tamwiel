@@ -184,7 +184,7 @@ export const addSaving = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: me } = await supabase
       .from("profiles")
-      .select("role, household_id")
+      .select("role, household_id, account_balance")
       .eq("id", userId)
       .maybeSingle();
     if (!me) throw new Error("Profile not found.");
@@ -198,7 +198,7 @@ export const addSaving = createServerFn({ method: "POST" })
       const credits = (rewards ?? []).reduce((a, r) => a + Number(r.amount), 0);
       const spent = (expenses ?? []).reduce((a, r) => a + Number(r.amount), 0);
       const saved = (savings ?? []).reduce((a, r) => a + Number(r.amount), 0);
-      const balance = credits - spent - saved;
+      const balance = Number(me.account_balance ?? 0) + credits - spent - saved;
       if (data.amount > balance) {
         throw new Error(`Insufficient funds. Your balance is Dh ${balance.toFixed(2)}.`);
       }

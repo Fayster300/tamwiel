@@ -32,10 +32,11 @@ function SavingsPage() {
 
   const balance = useMemo(() => {
     if (!profile) return 0;
+    const starting = Number(profile.account_balance ?? 0);
     const credits = rewards.filter((r) => r.to_profile_id === profile.id).reduce((a, r) => a + Number(r.amount), 0);
     const spent = expenses.filter((e) => e.profile_id === profile.id).reduce((a, e) => a + Number(e.amount), 0);
     const saved = savings.filter((s) => s.profile_id === profile.id).reduce((a, s) => a + Number(s.amount), 0);
-    return credits - spent - saved;
+    return starting + credits - spent - saved;
   }, [profile, rewards, expenses, savings]);
 
   const mySaved = useMemo(

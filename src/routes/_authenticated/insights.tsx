@@ -110,6 +110,7 @@ function Insights() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">What this means: solid line is what your family actually spent each month, dashed line is what we expect you'll spend over the next 3 months if habits stay the same.</p>
         </Bento>
 
         <Bento>
@@ -125,6 +126,7 @@ function Insights() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">What this means: where your total savings could grow over the next 6 months if you keep setting aside the same amount you have been recently.</p>
           {s.goal > 0 && s.monthsToGoal != null && (
             <p className="text-xs text-muted-foreground mt-2">🎯 Reaches AED {s.goal.toFixed(0)} ({s.goalName ?? "your goal"}) in ~{Math.ceil(s.monthsToGoal)} months.</p>
           )}
@@ -167,6 +169,7 @@ function Insights() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">What this means: the total amount your household has spent in each category since you started — the tallest bar is where most of your money goes.</p>
         </Bento>
       )}
 

@@ -19,7 +19,7 @@ import {
   Users,
   Menu,
   X,
-  Search,
+  
   Bell,
   LogOut,
   Copy,
@@ -181,15 +181,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <button onClick={() => setMobileOpen(true)} className="sm:hidden size-9 rounded-lg glass flex items-center justify-center">
                   <Menu className="size-4" />
                 </button>
-                <div className="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 border border-white/5 flex-1 max-w-md">
-                  <Search className="size-4 text-muted-foreground" />
-                  <input
-                    className="bg-transparent text-sm outline-none flex-1 placeholder:text-muted-foreground"
-                    placeholder="Search expenses, members, insights…"
-                  />
-                  <kbd className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-white/5">⌘K</kbd>
-                </div>
-                <div className="flex-1 md:hidden" />
+                <div className="flex-1" />
                 <button
                   onClick={() => toast.info("No new notifications", { description: "You're all caught up." })}
                   className="relative size-9 rounded-lg glass flex items-center justify-center hover:scale-105 transition"
