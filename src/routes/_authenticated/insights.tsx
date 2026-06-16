@@ -110,6 +110,7 @@ function Insights() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">What this means: solid line is what your family actually spent each month, dashed line is what we expect you'll spend over the next 3 months if habits stay the same.</p>
         </Bento>
 
         <Bento>
