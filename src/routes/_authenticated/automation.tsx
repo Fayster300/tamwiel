@@ -26,6 +26,23 @@ const initialBills: Bill[] = [
 ];
 
 function AutomationDemo() {
+  const { data: profile } = useProfile();
+  if (profile && profile.role !== "owner") {
+    return (
+      <div className="glass rounded-3xl p-10 text-center max-w-2xl mx-auto mt-10">
+        <div className="size-14 rounded-2xl bg-neon shadow-glow mx-auto flex items-center justify-center mb-4">
+          <Lock className="size-6 text-primary-foreground" />
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold">Owner-only feature</h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          Auto-pay automations control household funds, so only the household owner can set them up. Ask your household owner to enable bills on your behalf.
+        </p>
+        <Link to="/" className="inline-block mt-5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
+          Back to overview
+        </Link>
+      </div>
+    );
+  }
   return (
     <div className="space-y-10">
       <Hero />
