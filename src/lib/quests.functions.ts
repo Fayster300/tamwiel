@@ -2,9 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function logAudit(quest_id: string, household_id: string, actor_id: string, action: string, meta: Record<string, unknown> = {}) {
+async function logAudit(quest_id: string, household_id: string, actor_id: string, action: string, meta: Record<string, string | number | boolean | null> = {}) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await supabaseAdmin.from("quest_audit_log").insert({ quest_id, household_id, actor_id, action, meta });
+  await supabaseAdmin.from("quest_audit_log").insert({ quest_id, household_id, actor_id, action, meta: meta as never });
 }
 
 export const listQuests = createServerFn({ method: "GET" })
