@@ -169,6 +169,7 @@ function Insights() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2 italic">What this means: the total amount your household has spent in each category since you started — the tallest bar is where most of your money goes.</p>
         </Bento>
       )}
 
