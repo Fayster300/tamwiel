@@ -1,14 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import {
   Zap, CheckCircle2, Clock, Receipt, Bolt, Wifi, Droplet, Home,
-  ArrowRight, Play, Pause, RotateCcw, Sparkles, Calendar, Shield,
+  ArrowRight, Play, Pause, RotateCcw, Sparkles, Calendar, Shield, Lock,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { Money } from "@/components/dh";
+import { useProfile } from "@/lib/use-profile";
 
 export const Route = createFileRoute("/_authenticated/automation")({
   head: () => ({ meta: [{ title: "Automation Demo · Tamwil · Family Finance" }] }),
