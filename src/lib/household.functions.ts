@@ -217,12 +217,13 @@ export const addSaving = createServerFn({ method: "POST" })
 export const updateHouseholdBudget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { savings_goal?: number | null; savings_goal_name?: string | null; monthly_budget?: number | null }) =>
+    (d: { savings_goal?: number | null; savings_goal_name?: string | null; monthly_budget?: number | null; currency?: string | null }) =>
       z
         .object({
           savings_goal: z.number().nonnegative().nullable().optional(),
           savings_goal_name: z.string().max(80).nullable().optional(),
           monthly_budget: z.number().nonnegative().nullable().optional(),
+          currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).nullable().optional(),
         })
         .parse(d),
   )
@@ -234,10 +235,11 @@ export const updateHouseholdBudget = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
     if (!me || me.role !== "owner") throw new Error("Only the household owner can update budgets.");
-    const patch: { savings_goal?: number | null; savings_goal_name?: string | null; monthly_budget?: number | null } = {};
+    const patch: { savings_goal?: number | null; savings_goal_name?: string | null; monthly_budget?: number | null; currency?: string } = {};
     if (data.savings_goal !== undefined) patch.savings_goal = data.savings_goal;
     if (data.savings_goal_name !== undefined) patch.savings_goal_name = data.savings_goal_name;
     if (data.monthly_budget !== undefined) patch.monthly_budget = data.monthly_budget;
+    if (data.currency) patch.currency = data.currency;
     const { error } = await supabase.from("households").update(patch).eq("id", me.household_id);
     if (error) throw error;
     return { ok: true };

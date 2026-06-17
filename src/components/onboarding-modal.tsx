@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useProfile } from "@/lib/use-profile";
 import { useServerFn } from "@tanstack/react-start";
 import { updateHouseholdBudget, completeOnboarding } from "@/lib/household.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Target, Wallet, Sparkles, Crown, Users, Copy, Check, Banknote } from "lucide-react";
+import { Target, Wallet, Sparkles, Crown, Users, Copy, Check, Banknote, Globe, Search } from "lucide-react";
 import avatarMale from "@/assets/avatar-male.png";
 import avatarFemale from "@/assets/avatar-female.png";
 import { Dh } from "@/components/dh";
+import { COUNTRIES, currencySymbol, type CountryEntry } from "@/lib/currency";
 
 const MEMBER_ROLES = ["Mom", "Dad", "Child", "Teen", "Grandparent", "Sibling", "Other"];
 
@@ -19,11 +20,14 @@ export function OnboardingModal() {
 
   // Steps:
   // 0 account type, 1 gender, 2 member role (member only),
-  // 3 owner goal, 4 owner monthly budget, 5 balance (both), 6 member done
+  // 7 owner country (new), 3 owner goal, 4 owner monthly budget,
+  // 5 balance (both), 6 member done
   const [step, setStep] = useState(0);
   const [accountType, setAccountType] = useState<"owner" | "member" | null>(null);
   const [gender, setGender] = useState<"male" | "female" | null>(null);
   const [memberRole, setMemberRole] = useState<string>("");
+  const [country, setCountry] = useState<CountryEntry | null>(null);
+  const [countryQuery, setCountryQuery] = useState("");
   const [goalName, setGoalName] = useState("");
   const [goalAmt, setGoalAmt] = useState("");
   const [budget, setBudget] = useState("");
@@ -40,6 +44,12 @@ export function OnboardingModal() {
   // If owner only needs the budget portion, jump straight to step 3
   const effectiveStep = needsIdentity ? step : Math.max(step, 3);
 
+  const filteredCountries = useMemo(() => {
+    const q = countryQuery.trim().toLowerCase();
+    if (!q) return COUNTRIES;
+    return COUNTRIES.filter((c) => c.name.toLowerCase().includes(q) || c.currency.toLowerCase().includes(q));
+  }, [countryQuery]);
+
   async function saveIdentity(type: "owner" | "member", bal: number) {
     setBusy(true);
     try {
@@ -51,8 +61,6 @@ export function OnboardingModal() {
           account_balance: bal,
         },
       });
-      // For members we want to keep the modal open on the final share-code screen
-      // until they dismiss it, so don't invalidate ["profile"] here.
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save.");
       throw err;
@@ -69,11 +77,8 @@ export function OnboardingModal() {
     }
     if (effectiveStep === 1) {
       if (!gender) return toast.error("Pick your avatar to continue.");
-      if (accountType === "member") {
-        setStep(2);
-      } else {
-        setStep(3);
-      }
+      if (accountType === "member") setStep(2);
+      else setStep(7); // owner → country picker
       return;
     }
     if (effectiveStep === 2) {
@@ -81,11 +86,14 @@ export function OnboardingModal() {
       setStep(5);
       return;
     }
+    if (effectiveStep === 7) {
+      if (!country) return toast.error("Pick your country to set the currency.");
+      setStep(3);
+      return;
+    }
     if (effectiveStep === 3) {
       const amt = parseFloat(goalAmt);
-      if (!goalName.trim() || isNaN(amt) || amt <= 0) {
-        return toast.error("Add a name and positive amount for your savings goal.");
-      }
+      if (!goalName.trim() || isNaN(amt) || amt <= 0) return toast.error("Add a name and positive amount for your savings goal.");
       setStep(4);
       return;
     }
@@ -98,10 +106,6 @@ export function OnboardingModal() {
     if (effectiveStep === 5) {
       const bal = parseFloat(balance);
       if (isNaN(bal) || bal < 0) return toast.error("Enter your current account balance (0 or more).");
-      // The user explicitly picked owner/member in step 0. During first-time
-      // onboarding (needsIdentity=true) trust that pick — profile.role still
-      // defaults to "owner" from the signup trigger. Only fall back to
-      // profile.role when we're re-entering just to set the budget.
       const effectiveRole: "owner" | "member" =
         needsIdentity ? (accountType ?? "owner") : (profile?.role ?? "owner");
       setBusy(true);
@@ -125,6 +129,7 @@ export function OnboardingModal() {
               savings_goal: isNaN(goalAmtNum) ? null : goalAmtNum,
               savings_goal_name: goalName.trim() || null,
               monthly_budget: isNaN(budgetNum) ? null : budgetNum,
+              currency: country?.currency ?? null,
             },
           });
           toast.success("Household setup complete!");
@@ -150,13 +155,14 @@ export function OnboardingModal() {
   }
 
   const isMember = accountType === "member";
-  const totalSteps = isMember ? 4 : 5;
+  const totalSteps = isMember ? 4 : 6; // owner now has country step
   const progressIndex = (() => {
     if (effectiveStep <= 1) return effectiveStep + 1;
     if (effectiveStep === 2) return 3; // member role
-    if (effectiveStep === 3) return 3; // owner goal
-    if (effectiveStep === 4) return 4; // owner budget
-    if (effectiveStep === 5) return isMember ? 4 : 5; // balance
+    if (effectiveStep === 7) return 3; // owner country
+    if (effectiveStep === 3) return 4; // owner goal
+    if (effectiveStep === 4) return 5; // owner budget
+    if (effectiveStep === 5) return isMember ? 4 : 6; // balance
     return totalSteps;
   })();
   const isFinalInput = effectiveStep === 5;
@@ -187,7 +193,6 @@ export function OnboardingModal() {
             </div>
           )}
 
-          {/* Step 0: account type */}
           {effectiveStep === 0 && (
             <div>
               <h3 className="font-semibold mb-1">Are you the household owner or a member?</h3>
@@ -199,7 +204,6 @@ export function OnboardingModal() {
             </div>
           )}
 
-          {/* Step 1: gender / avatar */}
           {effectiveStep === 1 && (
             <div>
               <h3 className="font-semibold mb-1">Pick your profile avatar</h3>
@@ -211,7 +215,6 @@ export function OnboardingModal() {
             </div>
           )}
 
-          {/* Step 2: member role */}
           {effectiveStep === 2 && (
             <div>
               <h3 className="font-semibold mb-1">What's your role in the household?</h3>
@@ -239,7 +242,51 @@ export function OnboardingModal() {
             </div>
           )}
 
-          {/* Step 3: owner savings goal */}
+          {effectiveStep === 7 && (
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Globe className="size-4 text-info" />
+                <h3 className="font-semibold">Where is your household based?</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                We'll use this to set your household currency. {country && (
+                  <span className="text-foreground font-medium">
+                    {country.flag} {country.name} → <span className="text-info">{country.currency}</span> ({currencySymbol(country.currency)})
+                  </span>
+                )}
+              </p>
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <input
+                  autoFocus
+                  value={countryQuery}
+                  onChange={(e) => setCountryQuery(e.target.value)}
+                  placeholder="Search country or currency…"
+                  className="w-full pl-9 bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60"
+                />
+              </div>
+              <div className="max-h-72 overflow-auto rounded-xl border border-white/10 bg-white/[0.02]">
+                {filteredCountries.length === 0 && (
+                  <div className="p-4 text-center text-sm text-muted-foreground">No match.</div>
+                )}
+                {filteredCountries.map((c) => {
+                  const active = country?.code === c.code;
+                  return (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => setCountry(c)}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-sm text-left transition border-b border-white/5 last:border-b-0 ${active ? "bg-primary/15 text-foreground" : "hover:bg-white/5"}`}
+                    >
+                      <span className="flex items-center gap-2"><span className="text-lg leading-none">{c.flag}</span>{c.name}</span>
+                      <span className="text-xs text-muted-foreground">{c.currency} <span className="text-foreground/70">{currencySymbol(c.currency)}</span></span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {effectiveStep === 3 && (
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -251,13 +298,12 @@ export function OnboardingModal() {
                 <input autoFocus value={goalName} onChange={(e) => setGoalName(e.target.value)} placeholder="Family vacation, emergency fund…" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
               <div className="h-3" />
-              <Field label={<>Target amount (<Dh />)</>}>
+              <Field label={<>Target amount ({country ? currencySymbol(country.currency) : <Dh />})</>}>
                 <input value={goalAmt} onChange={(e) => setGoalAmt(e.target.value)} placeholder="5000" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
             </div>
           )}
 
-          {/* Step 4: owner monthly budget */}
           {effectiveStep === 4 && (
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -265,13 +311,12 @@ export function OnboardingModal() {
                 <h3 className="font-semibold">Monthly budget</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">How much can your household spend per month?</p>
-              <Field label={<>Monthly budget (<Dh />)</>}>
+              <Field label={<>Monthly budget ({country ? currencySymbol(country.currency) : <Dh />})</>}>
                 <input autoFocus value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="8000" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
             </div>
           )}
 
-          {/* Step 5: current account balance (both flows) */}
           {effectiveStep === 5 && (
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -281,13 +326,12 @@ export function OnboardingModal() {
               <p className="text-sm text-muted-foreground mb-4">
                 How much money is in your account right now? Expenses you log will be deducted from this balance — you'll get an error if you try to spend more than you have.
               </p>
-              <Field label={<>Current balance (<Dh />)</>}>
+              <Field label={<>Current balance ({country ? currencySymbol(country.currency) : <Dh />})</>}>
                 <input autoFocus value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="1000" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2.5 outline-none text-sm border border-white/10 focus:border-primary/60" />
               </Field>
             </div>
           )}
 
-          {/* Step 6: member done — show link code */}
           {isDoneScreen && (
             <div className="text-center">
               <div className="size-16 rounded-2xl bg-neon shadow-glow flex items-center justify-center mx-auto mb-3">
