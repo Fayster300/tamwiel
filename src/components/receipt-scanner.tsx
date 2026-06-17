@@ -17,13 +17,14 @@ export function ReceiptScanner() {
   const [items, setItems] = useState<Item[]>([]);
   const [merchant, setMerchant] = useState("");
   const cameraRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const scan = useServerFn(scanReceipt);
   const addExp = useServerFn(addExpense);
   const qc = useQueryClient();
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
+  function pick() { fileRef.current?.click(); }
   function pickCamera() { cameraRef.current?.click(); }
-  function pickFiles() { fileRef.current?.click(); }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
