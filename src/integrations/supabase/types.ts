@@ -113,6 +113,7 @@ export type Database = {
       households: {
         Row: {
           created_at: string
+          currency: string
           id: string
           invite_code: string
           monthly_budget: number | null
@@ -123,6 +124,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          currency?: string
           id?: string
           invite_code: string
           monthly_budget?: number | null
@@ -133,6 +135,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          currency?: string
           id?: string
           invite_code?: string
           monthly_budget?: number | null

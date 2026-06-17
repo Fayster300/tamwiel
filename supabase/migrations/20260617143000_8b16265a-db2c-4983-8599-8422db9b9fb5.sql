@@ -1,0 +1,1 @@
+ALTER TABLE public.households ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'AED';
