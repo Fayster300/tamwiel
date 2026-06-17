@@ -22,6 +22,7 @@ export interface ProfileWithHousehold {
     savings_goal: number | null;
     savings_goal_name: string | null;
     monthly_budget: number | null;
+    currency: string | null;
   } | null;
 }
 
@@ -34,7 +35,7 @@ export function useProfile() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id, full_name, username, role, household_id, link_code, avatar_url, gender, member_role, account_type, onboarded, account_balance, household:households(id, name, invite_code, owner_id, savings_goal, savings_goal_name, monthly_budget)",
+          "id, full_name, username, role, household_id, link_code, avatar_url, gender, member_role, account_type, onboarded, account_balance, household:households(id, name, invite_code, owner_id, savings_goal, savings_goal_name, monthly_budget, currency)",
         )
         .eq("id", userRes.user.id)
         .maybeSingle();
