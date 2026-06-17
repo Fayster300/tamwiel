@@ -44,19 +44,21 @@ function QuestsPage() {
 
 function Hero({ isOwner }: { isOwner: boolean }) {
   return (
-    <div className="glass rounded-3xl p-6 md:p-8 relative overflow-hidden">
-      <div className="absolute -top-20 -right-20 size-72 rounded-full bg-neon opacity-20 blur-3xl" />
+    <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-primary/25 via-accent/15 to-info/20 border border-white/10">
+      <div className="absolute -top-16 -right-16 size-72 rounded-full bg-neon opacity-30 blur-3xl animate-pulse" />
+      <div className="absolute -bottom-10 -left-10 size-56 rounded-full bg-accent/30 opacity-30 blur-3xl" />
+      <div className="absolute top-4 right-6 text-4xl select-none animate-bounce" style={{ animationDuration: "2.8s" }}>🏆</div>
       <div className="relative">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-widest bg-accent/20 border border-accent/30 text-accent-foreground">
-          <Trophy className="size-3" /> Financial Quests
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-widest bg-white/10 border border-white/20 backdrop-blur">
+          <Sparkles className="size-3" /> Financial Quests · Level up your money
         </div>
         <h1 className="text-3xl md:text-4xl font-bold mt-3">
-          {isOwner ? "Turn chores into" : "Earn, save,"} <span className="text-gradient">money lessons</span>
+          {isOwner ? "Turn chores into" : "Earn, save,"} <span className="text-gradient">money lessons</span> <span className="inline-block">✨</span>
         </h1>
         <p className="text-sm md:text-base text-muted-foreground mt-2 max-w-2xl">
           {isOwner
-            ? "Assign paid tasks to household members. Reward great work, teach saving habits, and keep a full audit trail."
-            : "Accept quests, upload proof, get approved — and earn money the smart way with built-in savings."}
+            ? "Assign paid missions to family members. Reward great work, teach saving habits, and keep a full audit trail. 🎯"
+            : "Accept missions, snap proof, get approved — and earn money the smart way with built-in savings. 🚀"}
         </p>
       </div>
     </div>
@@ -601,49 +603,60 @@ function SubmitModal({ quest, onClose }: { quest: Quest; onClose: () => void }) 
 function QuestCard({ quest, role, actions, onClick }: { quest: Quest; role: "owner" | "member"; actions?: React.ReactNode; onClick?: () => void }) {
   const cfg = STATUS[quest.status];
   const interactive = role === "owner" && quest.status === "submitted";
+  const clickable = interactive || !!onClick;
+  const isApproved = quest.status === "approved";
   return (
     <div
       onClick={onClick}
-      className={`p-4 rounded-2xl border bg-white/[0.03] transition ${cfg.border} ${interactive ? "cursor-pointer hover:bg-white/[0.06]" : ""}`}
+      className={`group relative p-4 rounded-2xl border bg-gradient-to-br ${cfg.bg} ${cfg.border} transition-all duration-300 hover:-translate-y-1 hover:shadow-glow ${clickable ? "cursor-pointer" : ""} ${isApproved ? "ring-1 ring-success/30" : ""}`}
     >
+      {isApproved && (
+        <div className="absolute -top-2 -right-2 text-xl select-none animate-bounce" style={{ animationDuration: "2s" }}>🎉</div>
+      )}
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="font-semibold text-sm truncate">{quest.title}</div>
-          {quest.description && <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{quest.description}</div>}
+        <div className="min-w-0 flex items-start gap-2">
+          <span className="text-xl leading-none mt-0.5 select-none">{cfg.emoji}</span>
+          <div className="min-w-0">
+            <div className="font-semibold text-sm truncate">{quest.title}</div>
+            {quest.description && <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{quest.description}</div>}
+          </div>
         </div>
         <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold inline-flex items-center gap-1 ${cfg.cls}`}>
           {cfg.icon} {cfg.label}
         </span>
       </div>
-      <div className="flex items-center justify-between mt-3 text-xs">
-        <div className="inline-flex items-baseline gap-1 px-2 py-1 rounded-lg bg-success/10 text-success font-semibold">
-          <Coins className="size-3.5" /> <Money amount={Number(quest.reward)} decimals={0} />
+      <div className="flex items-center justify-between mt-3 text-xs flex-wrap gap-2">
+        <div className="inline-flex items-baseline gap-1 px-2.5 py-1 rounded-lg bg-success/15 text-success font-bold border border-success/30 group-hover:scale-105 transition">
+          <Coins className="size-3.5 self-center" /> <Money amount={Number(quest.reward)} decimals={0} />
         </div>
-        {quest.due_date && <span className="text-muted-foreground">Due {quest.due_date}</span>}
-        {quest.savings_split_pct != null && <span className="text-info">{quest.savings_split_pct}% saved</span>}
+        {quest.due_date && <span className="text-muted-foreground inline-flex items-center gap-1">📅 {quest.due_date}</span>}
+        {quest.savings_split_pct != null && (
+          <span className="text-info font-semibold inline-flex items-center gap-1">🐷 {quest.savings_split_pct}% saved</span>
+        )}
       </div>
       {interactive && (
-        <div className="mt-3 text-xs text-info inline-flex items-center gap-1 font-semibold">Open to review <ChevronRight className="size-3" /></div>
+        <div className="mt-3 text-xs text-info inline-flex items-center gap-1 font-semibold animate-pulse">
+          Tap to review <ChevronRight className="size-3" />
+        </div>
       )}
       {actions}
     </div>
   );
 }
 
-const STATUS: Record<Quest["status"], { label: string; cls: string; border: string; icon: React.ReactNode }> = {
-  pending_acceptance: { label: "Pending acceptance", cls: "bg-warning/15 text-warning", border: "border-warning/30", icon: <Clock className="size-3" /> },
-  accepted: { label: "In progress", cls: "bg-info/15 text-info", border: "border-info/30", icon: <Hourglass className="size-3" /> },
-  submitted: { label: "Awaiting review", cls: "bg-accent/15 text-accent-foreground", border: "border-accent/40", icon: <ShieldCheck className="size-3" /> },
-  approved: { label: "Approved", cls: "bg-success/15 text-success", border: "border-success/30", icon: <Check className="size-3" /> },
-  rejected: { label: "Needs fixes", cls: "bg-destructive/15 text-destructive", border: "border-destructive/30", icon: <ThumbsDown className="size-3" /> },
-  declined: { label: "Declined", cls: "bg-muted/30 text-muted-foreground", border: "border-white/10", icon: <X className="size-3" /> },
+const STATUS: Record<Quest["status"], { label: string; cls: string; border: string; bg: string; icon: React.ReactNode; emoji: string }> = {
+  pending_acceptance: { label: "New mission", cls: "bg-warning/15 text-warning", border: "border-warning/30", bg: "from-warning/10 to-transparent", icon: <Clock className="size-3" />, emoji: "🎯" },
+  accepted: { label: "In progress", cls: "bg-info/15 text-info", border: "border-info/30", bg: "from-info/10 to-transparent", icon: <Hourglass className="size-3" />, emoji: "⚡" },
+  submitted: { label: "Awaiting review", cls: "bg-accent/15 text-accent-foreground", border: "border-accent/40", bg: "from-accent/10 to-transparent", icon: <ShieldCheck className="size-3" />, emoji: "🔍" },
+  approved: { label: "Approved", cls: "bg-success/15 text-success", border: "border-success/40", bg: "from-success/15 to-transparent", icon: <Check className="size-3" />, emoji: "🏆" },
+  rejected: { label: "Needs fixes", cls: "bg-destructive/15 text-destructive", border: "border-destructive/30", bg: "from-destructive/10 to-transparent", icon: <ThumbsDown className="size-3" />, emoji: "🛠️" },
+  declined: { label: "Declined", cls: "bg-muted/30 text-muted-foreground", border: "border-white/10", bg: "from-white/[0.02] to-transparent", icon: <X className="size-3" />, emoji: "💤" },
 };
 
 function Section({ title, empty, children }: { title: string; empty: string; children: React.ReactNode }) {
-  // Check if it's empty by inspecting children - simple heuristic
   return (
     <section className="glass rounded-3xl p-4 md:p-5">
-      <h2 className="text-sm font-bold mb-3">{title}</h2>
+      <h2 className="text-sm font-bold mb-3 inline-flex items-center gap-2">{title}</h2>
       {children}
       <div className="text-[11px] text-muted-foreground mt-1 sr-only">{empty}</div>
     </section>
@@ -651,8 +664,9 @@ function Section({ title, empty, children }: { title: string; empty: string; chi
 }
 
 function KPI({ label, value, tone }: { label: string; value: React.ReactNode; tone?: "ok" | "warn" }) {
+  const toneCls = tone === "ok" ? "from-success/15 to-transparent border-success/30" : tone === "warn" ? "from-warning/15 to-transparent border-warning/30 animate-pulse" : "from-white/[0.04] to-transparent border-white/10";
   return (
-    <div className="glass rounded-2xl p-4">
+    <div className={`rounded-2xl p-4 border bg-gradient-to-br ${toneCls} hover:-translate-y-0.5 transition-transform`}>
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
       <div className={`text-xl font-bold mt-1 inline-flex items-baseline gap-0.5 ${tone === "ok" ? "text-success" : tone === "warn" ? "text-warning" : ""}`}>{value}</div>
     </div>
