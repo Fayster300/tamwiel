@@ -102,6 +102,65 @@ function decodeCbor(data: Uint8Array) {
   return readCbor(data).value;
 }
 
+function mapGet<T extends CborValue>(map: Map<CborValue, CborValue>, key: number): T {
+  return map.get(key) as T;
+}
+
+function parseAuthData(authData: Uint8Array) {
+  const rpHash = authData.slice(0, 32);
+  const flags = authData[32];
+  const counter = (authData[33] << 24) | (authData[34] << 16) | (authData[35] << 8) | authData[36];
+  let credentialId: string | undefined;
+  let publicKey: Uint8Array | undefined;
+  if (flags & 0x40) {
+    const credIdLen = (authData[53] << 8) | authData[54];
+    const credId = authData.slice(55, 55 + credIdLen);
+    credentialId = bytesToBase64Url(credId);
+    publicKey = authData.slice(55 + credIdLen);
+  }
+  return { rpHash, flags, counter, credentialId, publicKey };
+}
+
+function assertUserVerified(flags: number) {
+  if ((flags & 0x01) === 0 || (flags & 0x04) === 0) throw new Error("Face ID / device verification was not completed.");
+}
+
+async function verifyRpIdHash(authData: Uint8Array) {
+  const parsed = parseAuthData(authData);
+  const expected = await sha256(rpId());
+  if (!bytesEqual(parsed.rpHash, expected)) throw new Error("Passkey belongs to a different website.");
+  assertUserVerified(parsed.flags);
+  return parsed;
+}
+
+async function importCosePublicKey(cose: Uint8Array) {
+  const decoded = decodeCbor(cose);
+  if (!(decoded instanceof Map)) throw new Error("Unsupported passkey public key.");
+  const alg = mapGet<number>(decoded, 3);
+  if (alg !== -7) throw new Error("This passkey algorithm is not supported yet. Please enroll this device again.");
+  const x = mapGet<Uint8Array>(decoded, -2);
+  const y = mapGet<Uint8Array>(decoded, -3);
+  return crypto.subtle.importKey(
+    "jwk",
+    { kty: "EC", crv: "P-256", x: bytesToBase64Url(x), y: bytesToBase64Url(y), ext: true },
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["verify"],
+  );
+}
+
+async function verifyAssertionSignature(response: unknown, publicKeyB64: string) {
+  const res = (response as { response?: { authenticatorData?: string; clientDataJSON?: string; signature?: string } }).response;
+  if (!res?.authenticatorData || !res.clientDataJSON || !res.signature) throw new Error("Missing passkey assertion data.");
+  const authenticatorData = base64UrlToBytes(res.authenticatorData);
+  await verifyRpIdHash(authenticatorData);
+  const signedBytes = concatBytes(authenticatorData, await sha256(base64UrlToBytes(res.clientDataJSON)));
+  const key = await importCosePublicKey(base64UrlToBytes(publicKeyB64));
+  const signature = base64UrlToBytes(res.signature);
+  const ok = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, signature.buffer, signedBytes.buffer);
+  if (!ok) throw new Error("Passkey signature could not be verified.");
+}
+
 export const hasPasskey = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
