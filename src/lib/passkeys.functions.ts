@@ -19,8 +19,7 @@ function origin() {
 
 function base64Url(bytes: Uint8Array | string) {
   const input = typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes;
-  const binary = String.fromCharCode(...input);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return bytesToBase64Url(input);
 }
 
 function randomChallenge() {
@@ -32,9 +31,41 @@ function randomChallenge() {
 function parseClientData(response: unknown) {
   const clientDataJSON = (response as { response?: { clientDataJSON?: string } })?.response?.clientDataJSON;
   if (!clientDataJSON) throw new Error("Missing passkey client data.");
-  const padded = clientDataJSON.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(clientDataJSON.length / 4) * 4, "=");
-  const json = atob(padded);
+  const json = new TextDecoder().decode(base64UrlToBytes(clientDataJSON));
   return JSON.parse(json) as { type?: string; challenge?: string; origin?: string };
+}
+
+function bytesToBase64Url(bytes: Uint8Array) {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.slice(i, i + 8192));
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlToBytes(value: string) {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function concatBytes(...parts: Uint8Array[]) {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let offset = 0;
+  for (const part of parts) { out.set(part, offset); offset += part.length; }
+  return out;
+}
+
+async function sha256(data: Uint8Array | string) {
+  const input = typeof data === "string" ? new TextEncoder().encode(data) : data;
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", input));
+}
+
+function bytesEqual(a: Uint8Array, b: Uint8Array) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
 }
 
 export const hasPasskey = createServerFn({ method: "GET" })
