@@ -31,8 +31,9 @@ function randomChallenge() {
 function parseClientData(response: unknown) {
   const clientDataJSON = (response as { response?: { clientDataJSON?: string } })?.response?.clientDataJSON;
   if (!clientDataJSON) throw new Error("Missing passkey client data.");
-  const json = new TextDecoder().decode(base64UrlToBytes(clientDataJSON));
-  return JSON.parse(json) as { type?: string; challenge?: string; origin?: string };
+  const raw = base64UrlToBytes(clientDataJSON);
+  const json = new TextDecoder().decode(raw);
+  return { raw, data: JSON.parse(json) as { type?: string; challenge?: string; origin?: string } };
 }
 
 function bytesToBase64Url(bytes: Uint8Array) {
@@ -68,6 +69,37 @@ function bytesEqual(a: Uint8Array, b: Uint8Array) {
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
   return diff === 0;
+}
+
+type CborValue = number | string | Uint8Array | CborValue[] | Map<CborValue, CborValue> | boolean | null;
+
+function readCbor(data: Uint8Array, offset = 0): { value: CborValue; offset: number } {
+  const first = data[offset++];
+  const major = first >> 5;
+  const ai = first & 31;
+  const readLen = () => {
+    if (ai < 24) return ai;
+    if (ai === 24) return data[offset++];
+    if (ai === 25) { const n = (data[offset] << 8) | data[offset + 1]; offset += 2; return n; }
+    if (ai === 26) { const n = (data[offset] * 2 ** 24) + (data[offset + 1] << 16) + (data[offset + 2] << 8) + data[offset + 3]; offset += 4; return n; }
+    throw new Error("Unsupported passkey data length.");
+  };
+  const len = major === 7 ? ai : readLen();
+  if (major === 0) return { value: len, offset };
+  if (major === 1) return { value: -1 - len, offset };
+  if (major === 2) { const value = data.slice(offset, offset + len); return { value, offset: offset + len }; }
+  if (major === 3) { const value = new TextDecoder().decode(data.slice(offset, offset + len)); return { value, offset: offset + len }; }
+  if (major === 4) { const value: CborValue[] = []; for (let i = 0; i < len; i++) { const next = readCbor(data, offset); value.push(next.value); offset = next.offset; } return { value, offset }; }
+  if (major === 5) { const value = new Map<CborValue, CborValue>(); for (let i = 0; i < len; i++) { const key = readCbor(data, offset); const val = readCbor(data, key.offset); value.set(key.value, val.value); offset = val.offset; } return { value, offset }; }
+  if (major === 6) return readCbor(data, offset);
+  if (major === 7 && ai === 20) return { value: false, offset };
+  if (major === 7 && ai === 21) return { value: true, offset };
+  if (major === 7 && ai === 22) return { value: null, offset };
+  throw new Error("Unsupported passkey data format.");
+}
+
+function decodeCbor(data: Uint8Array) {
+  return readCbor(data).value;
 }
 
 export const hasPasskey = createServerFn({ method: "GET" })
