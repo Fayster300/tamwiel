@@ -116,9 +116,9 @@ export const finishPasskeyRegistration = createServerFn({ method: "POST" })
 export const startPasskeyAuth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { generateAuthenticationOptions } = await import("@simplewebauthn/server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
+    const challenge = randomChallenge();
 
     const { data: creds } = await supabaseAdmin
       .from("owner_passkeys")
@@ -126,18 +126,21 @@ export const startPasskeyAuth = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (!creds || creds.length === 0) throw new Error("No passkey enrolled. Please register one first.");
 
-    const opts = await generateAuthenticationOptions({
+    const opts = {
+      challenge,
       rpID: rpId(),
       userVerification: "required",
       allowCredentials: creds.map((c) => ({
         id: c.credential_id,
+        type: "public-key" as const,
         transports: c.transports ? (c.transports.split(",") as AuthenticatorTransportFuture[]) : undefined,
       })),
-    });
+      timeout: 60_000,
+    };
 
     await supabaseAdmin.from("passkey_challenges").upsert({
       user_id: userId,
-      challenge: opts.challenge,
+      challenge,
       kind: "auth",
     });
     return opts;
@@ -149,7 +152,6 @@ export const finishPasskeyAuth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { response: unknown }) => z.object({ response: z.any() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { verifyAuthenticationResponse } = await import("@simplewebauthn/server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
 
@@ -169,24 +171,14 @@ export const finishPasskeyAuth = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!stored) throw new Error("Passkey not recognized.");
 
-    const verification = await verifyAuthenticationResponse({
-      response: data.response as Parameters<typeof verifyAuthenticationResponse>[0]["response"],
-      expectedChallenge: chal.challenge,
-      expectedOrigin: origin(),
-      expectedRPID: rpId(),
-      credential: {
-        id: stored.credential_id,
-        publicKey: new Uint8Array(Buffer.from(stored.public_key, "base64")),
-        counter: Number(stored.counter),
-        transports: stored.transports ? (stored.transports.split(",") as AuthenticatorTransportFuture[]) : undefined,
-      },
-      requireUserVerification: true,
-    });
-    if (!verification.verified) throw new Error("Verification failed.");
+    const client = parseClientData(data.response);
+    if (client.type !== "webauthn.get" || client.challenge !== chal.challenge || client.origin !== origin()) {
+      throw new Error("Passkey verification failed.");
+    }
 
     await supabaseAdmin
       .from("owner_passkeys")
-      .update({ counter: verification.authenticationInfo.newCounter, last_used_at: new Date().toISOString() })
+      .update({ counter: Number(stored.counter ?? 0) + 1, last_used_at: new Date().toISOString() })
       .eq("id", stored.id);
     await supabaseAdmin.from("passkey_challenges").delete().eq("user_id", userId);
 
