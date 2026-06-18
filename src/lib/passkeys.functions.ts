@@ -102,6 +102,23 @@ function decodeCbor(data: Uint8Array) {
   return readCbor(data).value;
 }
 
+function derToRawEcdsa(der: Uint8Array) {
+  if (der[0] !== 0x30) throw new Error("Invalid passkey signature.");
+  let offset = der[1] > 0x80 ? 2 + (der[1] & 0x7f) : 2;
+  if (der[offset++] !== 0x02) throw new Error("Invalid passkey signature.");
+  const rLen = der[offset++];
+  let r = der.slice(offset, offset + rLen); offset += rLen;
+  if (der[offset++] !== 0x02) throw new Error("Invalid passkey signature.");
+  const sLen = der[offset++];
+  let s = der.slice(offset, offset + sLen);
+  while (r.length > 32 && r[0] === 0) r = r.slice(1);
+  while (s.length > 32 && s[0] === 0) s = s.slice(1);
+  const out = new Uint8Array(64);
+  out.set(r, 32 - r.length);
+  out.set(s, 64 - s.length);
+  return out;
+}
+
 function mapGet<T extends CborValue>(map: Map<CborValue, CborValue>, key: number): T {
   return map.get(key) as T;
 }
@@ -156,7 +173,7 @@ async function verifyAssertionSignature(response: unknown, publicKeyB64: string)
   await verifyRpIdHash(authenticatorData);
   const signedBytes = concatBytes(authenticatorData, await sha256(base64UrlToBytes(res.clientDataJSON)));
   const key = await importCosePublicKey(base64UrlToBytes(publicKeyB64));
-  const signature = base64UrlToBytes(res.signature);
+  const signature = derToRawEcdsa(base64UrlToBytes(res.signature));
   const ok = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, signature, signedBytes);
   if (!ok) throw new Error("Passkey signature could not be verified.");
 }
@@ -185,7 +202,6 @@ export const startPasskeyRegistration = createServerFn({ method: "POST" })
         { type: "public-key", alg: -257 },
       ],
       timeout: 60_000,
-      attestationType: "none",
       attestation: "none",
       authenticatorSelection: {
         residentKey: "preferred",
