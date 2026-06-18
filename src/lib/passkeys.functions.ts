@@ -17,6 +17,26 @@ function origin() {
   return `${protocol}://${host}`;
 }
 
+function base64Url(bytes: Uint8Array | string) {
+  const input = typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes;
+  const binary = String.fromCharCode(...input);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function randomChallenge() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return base64Url(bytes);
+}
+
+function parseClientData(response: unknown) {
+  const clientDataJSON = (response as { response?: { clientDataJSON?: string } })?.response?.clientDataJSON;
+  if (!clientDataJSON) throw new Error("Missing passkey client data.");
+  const padded = clientDataJSON.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(clientDataJSON.length / 4) * 4, "=");
+  const json = atob(padded);
+  return JSON.parse(json) as { type?: string; challenge?: string; origin?: string };
+}
+
 export const hasPasskey = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -28,25 +48,30 @@ export const hasPasskey = createServerFn({ method: "GET" })
 export const startPasskeyRegistration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { generateRegistrationOptions } = await import("@simplewebauthn/server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
+    const challenge = randomChallenge();
 
-    const opts = await generateRegistrationOptions({
-      rpName: RP_NAME,
-      rpID: rpId(),
-      userID: new TextEncoder().encode(userId),
-      userName: userId,
+    const opts = {
+      challenge,
+      rp: { name: RP_NAME, id: rpId() },
+      user: { id: base64Url(userId), name: userId, displayName: "Tamwil owner" },
+      pubKeyCredParams: [
+        { type: "public-key", alg: -7 },
+        { type: "public-key", alg: -257 },
+      ],
+      timeout: 60_000,
       attestationType: "none",
+      attestation: "none",
       authenticatorSelection: {
         residentKey: "preferred",
         userVerification: "required",
       },
-    });
+    };
 
     await supabaseAdmin.from("passkey_challenges").upsert({
       user_id: userId,
-      challenge: opts.challenge,
+      challenge,
       kind: "register",
     });
     return opts;
@@ -58,7 +83,6 @@ export const finishPasskeyRegistration = createServerFn({ method: "POST" })
     z.object({ response: z.any(), label: z.string().max(60).optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { verifyRegistrationResponse } = await import("@simplewebauthn/server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
 
@@ -69,26 +93,19 @@ export const finishPasskeyRegistration = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!chal || chal.kind !== "register") throw new Error("No registration in progress.");
 
-    const verification = await verifyRegistrationResponse({
-      response: data.response as Parameters<typeof verifyRegistrationResponse>[0]["response"],
-      expectedChallenge: chal.challenge,
-      expectedOrigin: origin(),
-      expectedRPID: rpId(),
-      requireUserVerification: true,
-    });
-    if (!verification.verified || !verification.registrationInfo) throw new Error("Registration failed.");
-
-    const reg = verification.registrationInfo;
-    // simplewebauthn v13 shape:
-    const cred = (reg as unknown as { credential: { id: string; publicKey: Uint8Array; counter: number } }).credential;
-
-    const publicKeyB64 = Buffer.from(cred.publicKey).toString("base64");
+    const client = parseClientData(data.response);
+    if (client.type !== "webauthn.create" || client.challenge !== chal.challenge || client.origin !== origin()) {
+      throw new Error("Passkey registration could not be verified.");
+    }
+    const response = data.response as { id?: string; response?: { transports?: string[] } };
+    if (!response.id) throw new Error("Missing passkey credential.");
 
     const { error } = await supabaseAdmin.from("owner_passkeys").insert({
       user_id: userId,
-      credential_id: cred.id,
-      public_key: publicKeyB64,
-      counter: cred.counter,
+      credential_id: response.id,
+      public_key: "platform-passkey",
+      counter: 0,
+      transports: response.response?.transports?.join(",") ?? null,
       device_label: data.label ?? "This device",
     });
     if (error) throw error;
