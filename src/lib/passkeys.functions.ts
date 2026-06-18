@@ -58,7 +58,9 @@ function concatBytes(...parts: Uint8Array[]) {
 
 async function sha256(data: Uint8Array | string) {
   const input = typeof data === "string" ? new TextEncoder().encode(data) : data;
-  return new Uint8Array(await crypto.subtle.digest("SHA-256", input));
+  const bytes = new Uint8Array(input.length);
+  bytes.set(input);
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes.buffer));
 }
 
 function bytesEqual(a: Uint8Array, b: Uint8Array) {
