@@ -128,7 +128,7 @@ export const startPasskeyAuth = createServerFn({ method: "POST" })
 
     const opts = {
       challenge,
-      rpID: rpId(),
+      rpId: rpId(),
       userVerification: "required",
       allowCredentials: creds.map((c) => ({
         id: c.credential_id,
