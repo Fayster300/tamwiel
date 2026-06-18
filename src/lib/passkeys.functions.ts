@@ -157,7 +157,7 @@ async function verifyAssertionSignature(response: unknown, publicKeyB64: string)
   const signedBytes = concatBytes(authenticatorData, await sha256(base64UrlToBytes(res.clientDataJSON)));
   const key = await importCosePublicKey(base64UrlToBytes(publicKeyB64));
   const signature = base64UrlToBytes(res.signature);
-  const ok = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, signature.buffer, signedBytes.buffer);
+  const ok = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, signature, signedBytes);
   if (!ok) throw new Error("Passkey signature could not be verified.");
 }
 
@@ -218,17 +218,24 @@ export const finishPasskeyRegistration = createServerFn({ method: "POST" })
     if (!chal || chal.kind !== "register") throw new Error("No registration in progress.");
 
     const client = parseClientData(data.response);
-    if (client.type !== "webauthn.create" || client.challenge !== chal.challenge || client.origin !== origin()) {
+    if (client.data.type !== "webauthn.create" || client.data.challenge !== chal.challenge || client.data.origin !== origin()) {
       throw new Error("Passkey registration could not be verified.");
     }
-    const response = data.response as { id?: string; response?: { transports?: string[] } };
+    const response = data.response as { id?: string; response?: { attestationObject?: string; transports?: string[] } };
     if (!response.id) throw new Error("Missing passkey credential.");
+    if (!response.response?.attestationObject) throw new Error("Missing passkey attestation.");
+    const attestation = decodeCbor(base64UrlToBytes(response.response.attestationObject));
+    if (!(attestation instanceof Map)) throw new Error("Passkey attestation could not be read.");
+    const authData = attestation.get("authData");
+    if (!(authData instanceof Uint8Array)) throw new Error("Passkey authentication data is missing.");
+    const parsed = await verifyRpIdHash(authData);
+    if (!parsed.credentialId || !parsed.publicKey || parsed.credentialId !== response.id) throw new Error("Passkey credential mismatch.");
 
     const { error } = await supabaseAdmin.from("owner_passkeys").insert({
       user_id: userId,
       credential_id: response.id,
-      public_key: "platform-passkey",
-      counter: 0,
+      public_key: bytesToBase64Url(parsed.publicKey),
+      counter: parsed.counter,
       transports: response.response?.transports?.join(",") ?? null,
       device_label: data.label ?? "This device",
     });
@@ -296,9 +303,10 @@ export const finishPasskeyAuth = createServerFn({ method: "POST" })
     if (!stored) throw new Error("Passkey not recognized.");
 
     const client = parseClientData(data.response);
-    if (client.type !== "webauthn.get" || client.challenge !== chal.challenge || client.origin !== origin()) {
+    if (client.data.type !== "webauthn.get" || client.data.challenge !== chal.challenge || client.data.origin !== origin()) {
       throw new Error("Passkey verification failed.");
     }
+    await verifyAssertionSignature(data.response, stored.public_key);
 
     await supabaseAdmin
       .from("owner_passkeys")
