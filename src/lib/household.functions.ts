@@ -189,19 +189,17 @@ export const addSaving = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!me) throw new Error("Profile not found.");
 
-    if (me.role === "member") {
-      const [{ data: rewards }, { data: expenses }, { data: savings }] = await Promise.all([
-        supabase.from("rewards").select("amount").eq("to_profile_id", userId),
-        supabase.from("expenses").select("amount").eq("profile_id", userId),
-        supabase.from("savings").select("amount").eq("profile_id", userId),
-      ]);
-      const credits = (rewards ?? []).reduce((a, r) => a + Number(r.amount), 0);
-      const spent = (expenses ?? []).reduce((a, r) => a + Number(r.amount), 0);
-      const saved = (savings ?? []).reduce((a, r) => a + Number(r.amount), 0);
-      const balance = Number(me.account_balance ?? 0) + credits - spent - saved;
-      if (data.amount > balance) {
-        throw new Error(`Insufficient funds. Your balance is Dh ${balance.toFixed(2)}.`);
-      }
+    const [{ data: rewards }, { data: expenses }, { data: savings }] = await Promise.all([
+      supabase.from("rewards").select("amount").eq("to_profile_id", userId),
+      supabase.from("expenses").select("amount").eq("profile_id", userId),
+      supabase.from("savings").select("amount").eq("profile_id", userId),
+    ]);
+    const credits = (rewards ?? []).reduce((a, r) => a + Number(r.amount), 0);
+    const spent = (expenses ?? []).reduce((a, r) => a + Number(r.amount), 0);
+    const saved = (savings ?? []).reduce((a, r) => a + Number(r.amount), 0);
+    const balance = Number(me.account_balance ?? 0) + credits - spent - saved;
+    if (data.amount > balance) {
+      throw new Error(`Insufficient funds. Your available balance is Dh ${balance.toFixed(2)}.`);
     }
 
     const { error } = await supabase.from("savings").insert({
