@@ -250,7 +250,6 @@ function ReviewQuestModal({ quest, onClose }: { quest: Quest; onClose: () => voi
   const approve = useServerFn(approveQuest);
   const reject = useServerFn(rejectQuest);
   const qc = useQueryClient();
-  const [showGate, setShowGate] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
