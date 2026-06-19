@@ -101,22 +101,51 @@ function Hero() {
 
 // ============== Auto Bill Pay ==============
 function AutoBillSection() {
-  const [bills, setBills] = useState<Bill[]>(initialBills);
+  const [bills, setBills] = useState<Bill[]>(() => loadBills());
   const [playing, setPlaying] = useState(false);
   const [step, setStep] = useState(0);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState<{ name: string; amount: string; due: string; iconKey: string }>({ name: "", amount: "", due: "", iconKey: "tag" });
   const total = bills.reduce((a, b) => a + b.amount, 0);
   const paid = bills.filter((b) => b.status === "paid").reduce((a, b) => a + b.amount, 0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => { saveBills(bills); }, [bills]);
+
   function reset() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setBills(initialBills.map((b) => ({ ...b })));
+    setBills((bs) => bs.map((b) => ({ ...b, status: "scheduled" as BillStatus })));
     setStep(0);
     setPlaying(false);
   }
 
+  function addBill(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = parseFloat(form.amount);
+    if (!form.name.trim()) return toast.error("Bill name is required.");
+    if (isNaN(amount) || amount <= 0) return toast.error("Enter a positive amount.");
+    if (!form.due.trim()) return toast.error("Add a due date (e.g. 5th, 15th).");
+    const newBill: Bill = {
+      id: crypto.randomUUID(),
+      name: form.name.trim(),
+      amount,
+      due: form.due.trim(),
+      icon: iconFor(form.iconKey),
+      status: "scheduled",
+    };
+    setBills((bs) => [...bs, newBill]);
+    setForm({ name: "", amount: "", due: "", iconKey: "tag" });
+    setShowAdd(false);
+    toast.success("Bill added to auto-pay");
+  }
+
+  function removeBill(id: string) {
+    setBills((bs) => bs.filter((b) => b.id !== id));
+  }
+
   useEffect(() => {
     if (!playing) return;
+    if (bills.length === 0) { setPlaying(false); return; }
     if (step >= bills.length) { setPlaying(false); return; }
     setBills((bs) => bs.map((b, i) => (i === step ? { ...b, status: "processing" } : b)));
     timeoutRef.current = setTimeout(() => {
