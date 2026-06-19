@@ -35,6 +35,12 @@ export function OnboardingModal() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const filteredCountries = useMemo(() => {
+    const q = countryQuery.trim().toLowerCase();
+    if (!q) return COUNTRIES;
+    return COUNTRIES.filter((c) => c.name.toLowerCase().includes(q) || c.currency.toLowerCase().includes(q));
+  }, [countryQuery]);
+
   if (!profile) return null;
 
   const needsIdentity = !profile.onboarded;
@@ -43,12 +49,6 @@ export function OnboardingModal() {
 
   // If owner only needs the budget portion, jump straight to step 3
   const effectiveStep = needsIdentity ? step : Math.max(step, 3);
-
-  const filteredCountries = useMemo(() => {
-    const q = countryQuery.trim().toLowerCase();
-    if (!q) return COUNTRIES;
-    return COUNTRIES.filter((c) => c.name.toLowerCase().includes(q) || c.currency.toLowerCase().includes(q));
-  }, [countryQuery]);
 
   async function saveIdentity(type: "owner" | "member", bal: number) {
     setBusy(true);
