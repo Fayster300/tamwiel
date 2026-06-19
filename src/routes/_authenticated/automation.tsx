@@ -175,9 +175,12 @@ function AutoBillSection() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Workflow */}
         <Card className="lg:col-span-2">
-          <CardHeader title="Live demo: December payments" right={
-            <div className="flex gap-2">
-              <button onClick={() => setPlaying((p) => !p)} className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold inline-flex items-center gap-1.5">
+          <CardHeader title="Your scheduled bills" right={
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setShowAdd((s) => !s)} className="px-3 py-1.5 rounded-xl bg-accent/20 border border-accent/30 text-xs font-semibold inline-flex items-center gap-1.5">
+                <Plus className="size-3.5" /> Add bill
+              </button>
+              <button onClick={() => setPlaying((p) => !p)} disabled={bills.length === 0} className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
                 {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
                 {playing ? "Pause" : "Run automation"}
               </button>
@@ -187,9 +190,38 @@ function AutoBillSection() {
             </div>
           } />
 
+          {showAdd && (
+            <form onSubmit={addBill} className="mt-4 grid sm:grid-cols-[1fr_110px_110px_auto_auto] gap-2 items-end p-3 rounded-2xl bg-white/5 border border-white/10">
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Bill name</div>
+                <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Phone bill" maxLength={80} className="w-full bg-white/5 rounded-lg px-3 py-2 text-sm outline-none border border-white/10 focus:border-primary/50" />
+              </label>
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Amount</div>
+                <input value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} placeholder="0" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2 text-sm outline-none border border-white/10 focus:border-primary/50" />
+              </label>
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Due day</div>
+                <input value={form.due} onChange={(e) => setForm((f) => ({ ...f, due: e.target.value }))} placeholder="15th" maxLength={8} className="w-full bg-white/5 rounded-lg px-3 py-2 text-sm outline-none border border-white/10 focus:border-primary/50" />
+              </label>
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Icon</div>
+                <select value={form.iconKey} onChange={(e) => setForm((f) => ({ ...f, iconKey: e.target.value }))} className="bg-white/5 rounded-lg px-2 py-2 text-sm outline-none border border-white/10">
+                  {ICON_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </label>
+              <button className="px-3 py-2 rounded-lg bg-neon text-primary-foreground text-xs font-semibold shadow-glow inline-flex items-center gap-1.5">
+                <Plus className="size-3.5" /> Save
+              </button>
+            </form>
+          )}
+
           <Steps current={step} total={bills.length} />
 
           <div className="mt-4 space-y-2">
+            {bills.length === 0 && (
+              <div className="text-center text-sm text-muted-foreground py-6">No bills yet — add one above to start automating.</div>
+            )}
             {bills.map((b) => {
               const Icon = b.icon;
               return (
@@ -208,6 +240,9 @@ function AutoBillSection() {
                     {b.status === "processing" && (<><Bolt className="size-3.5 text-info" /> Paying…</>)}
                     {b.status === "paid" && (<><CheckCircle2 className="size-3.5 text-success" /> Paid</>)}
                   </div>
+                  <button onClick={() => removeBill(b.id)} className="size-8 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center" aria-label="Remove bill">
+                    <Trash2 className="size-3.5" />
+                  </button>
                 </div>
               );
             })}
@@ -222,7 +257,7 @@ function AutoBillSection() {
             <Stat label="Auto-paid so far" value={<Money amount={paid} decimals={0} />} tone="ok" />
             <Stat label="Pending" value={<Money amount={total - paid} decimals={0} />} />
             <div className="h-3 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-success to-secondary transition-all" style={{ width: `${(paid / total) * 100}%` }} />
+              <div className="h-full bg-gradient-to-r from-success to-secondary transition-all" style={{ width: `${total > 0 ? (paid / total) * 100 : 0}%` }} />
             </div>
             <p className="text-[11px] text-muted-foreground inline-flex items-baseline gap-1">Late-fee savings estimated this month: <span className="text-success font-semibold inline-flex items-baseline gap-1"><Money amount={75} decimals={0} /></span></p>
           </div>
