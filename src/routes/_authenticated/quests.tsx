@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Trophy, Loader2, Camera, Check, X, Clock, Hourglass, ShieldCheck, ThumbsDown,
-  Coins, ImagePlus, ChevronRight, ScanFace,
+  Coins, ImagePlus, ChevronRight,
 } from "lucide-react";
 import {
   listQuests, createQuest, acceptQuest, declineQuest, submitQuest, approveQuest, rejectQuest,
@@ -13,7 +13,6 @@ import {
 } from "@/lib/quests.functions";
 import { useProfile, useHouseholdMembers } from "@/lib/use-profile";
 import { Money, Dh } from "@/components/dh";
-import { PasskeyGate } from "@/components/passkey-prompt";
 
 export const Route = createFileRoute("/_authenticated/quests")({
   head: () => ({ meta: [{ title: "Financial Quests · Tamwil" }] }),
