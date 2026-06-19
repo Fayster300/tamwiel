@@ -3,27 +3,55 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import {
   Zap, CheckCircle2, Clock, Receipt, Bolt, Wifi, Droplet, Home,
-  ArrowRight, Play, Pause, RotateCcw, Sparkles, Calendar, Shield, Lock,
+  ArrowRight, Play, Pause, RotateCcw, Sparkles, Calendar, Shield, Lock, Plus, Trash2, Tag,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { Money } from "@/components/dh";
 import { useProfile } from "@/lib/use-profile";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/automation")({
   head: () => ({ meta: [{ title: "Automation Demo · Tamwil · Family Finance" }] }),
   component: AutomationDemo,
 });
 
-type Bill = { id: string; name: string; amount: number; due: string; icon: React.ElementType; status: "scheduled" | "processing" | "paid" };
+type BillStatus = "scheduled" | "processing" | "paid";
+type Bill = { id: string; name: string; amount: number; due: string; icon: React.ElementType; status: BillStatus };
+type StoredBill = { id: string; name: string; amount: number; due: string; iconKey: string; status: BillStatus };
 
-const initialBills: Bill[] = [
+const ICONS: Record<string, React.ElementType> = { home: Home, bolt: Bolt, water: Droplet, wifi: Wifi, tag: Tag };
+const ICON_KEYS = Object.keys(ICONS);
+function iconFor(key: string) { return ICONS[key] ?? Tag; }
+function keyForIcon(icon: React.ElementType): string {
+  const found = Object.entries(ICONS).find(([, c]) => c === icon);
+  return found?.[0] ?? "tag";
+}
+
+const STORAGE_KEY = "tamwil.autopay.bills.v1";
+const defaultBills: Bill[] = [
   { id: "rent", name: "Skyline Apartments (Rent)", amount: 4500, due: "1st", icon: Home, status: "scheduled" },
   { id: "elec", name: "PowerCo (Electricity)", amount: 320, due: "5th", icon: Bolt, status: "scheduled" },
   { id: "water", name: "WaterWorks", amount: 95, due: "5th", icon: Droplet, status: "scheduled" },
   { id: "net", name: "FiberNet (Internet)", amount: 180, due: "10th", icon: Wifi, status: "scheduled" },
 ];
+
+function loadBills(): Bill[] {
+  if (typeof window === "undefined") return defaultBills;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultBills;
+    const parsed = JSON.parse(raw) as StoredBill[];
+    if (!Array.isArray(parsed)) return defaultBills;
+    return parsed.map((b) => ({ id: b.id, name: b.name, amount: b.amount, due: b.due, status: b.status, icon: iconFor(b.iconKey) }));
+  } catch { return defaultBills; }
+}
+function saveBills(bills: Bill[]) {
+  if (typeof window === "undefined") return;
+  const stored: StoredBill[] = bills.map((b) => ({ id: b.id, name: b.name, amount: b.amount, due: b.due, status: b.status, iconKey: keyForIcon(b.icon) }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+}
 
 function AutomationDemo() {
   const { data: profile } = useProfile();
