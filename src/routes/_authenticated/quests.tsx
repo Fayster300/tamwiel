@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Trophy, Loader2, Camera, Check, X, Clock, Hourglass, ShieldCheck, ThumbsDown,
-  Coins, ImagePlus, ChevronRight, ScanFace,
+  Coins, ImagePlus, ChevronRight,
 } from "lucide-react";
 import {
   listQuests, createQuest, acceptQuest, declineQuest, submitQuest, approveQuest, rejectQuest,
@@ -13,7 +13,6 @@ import {
 } from "@/lib/quests.functions";
 import { useProfile, useHouseholdMembers } from "@/lib/use-profile";
 import { Money, Dh } from "@/components/dh";
-import { PasskeyGate } from "@/components/passkey-prompt";
 
 export const Route = createFileRoute("/_authenticated/quests")({
   head: () => ({ meta: [{ title: "Financial Quests · Tamwil" }] }),
@@ -251,7 +250,6 @@ function ReviewQuestModal({ quest, onClose }: { quest: Quest; onClose: () => voi
   const approve = useServerFn(approveQuest);
   const reject = useServerFn(rejectQuest);
   const qc = useQueryClient();
-  const [showGate, setShowGate] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -345,8 +343,8 @@ function ReviewQuestModal({ quest, onClose }: { quest: Quest; onClose: () => voi
                 <button onClick={() => setRejecting(true)} className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm inline-flex items-center gap-1.5">
                   <ThumbsDown className="size-3.5" /> Reject
                 </button>
-                <button onClick={() => setShowGate(true)} disabled={busy} className="px-4 py-2 rounded-lg bg-neon text-primary-foreground text-sm font-semibold shadow-glow inline-flex items-center gap-1.5 disabled:opacity-50">
-                  <ScanFace className="size-3.5" /> Approve &amp; pay
+                <button onClick={doApprove} disabled={busy} className="px-4 py-2 rounded-lg bg-neon text-primary-foreground text-sm font-semibold shadow-glow inline-flex items-center gap-1.5 disabled:opacity-50">
+                  <Check className="size-3.5" /> {busy ? "Approving…" : "Approve & pay"}
                 </button>
               </>
             ) : (
@@ -360,13 +358,6 @@ function ReviewQuestModal({ quest, onClose }: { quest: Quest; onClose: () => voi
           </footer>
         </div>
       </div>
-      <PasskeyGate
-        open={showGate}
-        title="Verify to approve payout"
-        detail={`Approving will pay Dh ${Number(quest.reward).toFixed(2)} from your account.`}
-        onClose={() => setShowGate(false)}
-        onSuccess={() => { setShowGate(false); doApprove(); }}
-      />
     </>
   );
 }

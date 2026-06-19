@@ -3,27 +3,55 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import {
   Zap, CheckCircle2, Clock, Receipt, Bolt, Wifi, Droplet, Home,
-  ArrowRight, Play, Pause, RotateCcw, Sparkles, Calendar, Shield, Lock,
+  ArrowRight, Play, Pause, RotateCcw, Sparkles, Calendar, Shield, Lock, Plus, Trash2, Tag,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { Money } from "@/components/dh";
 import { useProfile } from "@/lib/use-profile";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/automation")({
   head: () => ({ meta: [{ title: "Automation Demo · Tamwil · Family Finance" }] }),
   component: AutomationDemo,
 });
 
-type Bill = { id: string; name: string; amount: number; due: string; icon: React.ElementType; status: "scheduled" | "processing" | "paid" };
+type BillStatus = "scheduled" | "processing" | "paid";
+type Bill = { id: string; name: string; amount: number; due: string; icon: React.ElementType; status: BillStatus };
+type StoredBill = { id: string; name: string; amount: number; due: string; iconKey: string; status: BillStatus };
 
-const initialBills: Bill[] = [
+const ICONS: Record<string, React.ElementType> = { home: Home, bolt: Bolt, water: Droplet, wifi: Wifi, tag: Tag };
+const ICON_KEYS = Object.keys(ICONS);
+function iconFor(key: string) { return ICONS[key] ?? Tag; }
+function keyForIcon(icon: React.ElementType): string {
+  const found = Object.entries(ICONS).find(([, c]) => c === icon);
+  return found?.[0] ?? "tag";
+}
+
+const STORAGE_KEY = "tamwil.autopay.bills.v1";
+const defaultBills: Bill[] = [
   { id: "rent", name: "Skyline Apartments (Rent)", amount: 4500, due: "1st", icon: Home, status: "scheduled" },
   { id: "elec", name: "PowerCo (Electricity)", amount: 320, due: "5th", icon: Bolt, status: "scheduled" },
   { id: "water", name: "WaterWorks", amount: 95, due: "5th", icon: Droplet, status: "scheduled" },
   { id: "net", name: "FiberNet (Internet)", amount: 180, due: "10th", icon: Wifi, status: "scheduled" },
 ];
+
+function loadBills(): Bill[] {
+  if (typeof window === "undefined") return defaultBills;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultBills;
+    const parsed = JSON.parse(raw) as StoredBill[];
+    if (!Array.isArray(parsed)) return defaultBills;
+    return parsed.map((b) => ({ id: b.id, name: b.name, amount: b.amount, due: b.due, status: b.status, icon: iconFor(b.iconKey) }));
+  } catch { return defaultBills; }
+}
+function saveBills(bills: Bill[]) {
+  if (typeof window === "undefined") return;
+  const stored: StoredBill[] = bills.map((b) => ({ id: b.id, name: b.name, amount: b.amount, due: b.due, status: b.status, iconKey: keyForIcon(b.icon) }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+}
 
 function AutomationDemo() {
   const { data: profile } = useProfile();
@@ -73,22 +101,51 @@ function Hero() {
 
 // ============== Auto Bill Pay ==============
 function AutoBillSection() {
-  const [bills, setBills] = useState<Bill[]>(initialBills);
+  const [bills, setBills] = useState<Bill[]>(() => loadBills());
   const [playing, setPlaying] = useState(false);
   const [step, setStep] = useState(0);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState<{ name: string; amount: string; due: string; iconKey: string }>({ name: "", amount: "", due: "", iconKey: "tag" });
   const total = bills.reduce((a, b) => a + b.amount, 0);
   const paid = bills.filter((b) => b.status === "paid").reduce((a, b) => a + b.amount, 0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => { saveBills(bills); }, [bills]);
+
   function reset() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setBills(initialBills.map((b) => ({ ...b })));
+    setBills((bs) => bs.map((b) => ({ ...b, status: "scheduled" as BillStatus })));
     setStep(0);
     setPlaying(false);
   }
 
+  function addBill(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = parseFloat(form.amount);
+    if (!form.name.trim()) return toast.error("Bill name is required.");
+    if (isNaN(amount) || amount <= 0) return toast.error("Enter a positive amount.");
+    if (!form.due.trim()) return toast.error("Add a due date (e.g. 5th, 15th).");
+    const newBill: Bill = {
+      id: crypto.randomUUID(),
+      name: form.name.trim(),
+      amount,
+      due: form.due.trim(),
+      icon: iconFor(form.iconKey),
+      status: "scheduled",
+    };
+    setBills((bs) => [...bs, newBill]);
+    setForm({ name: "", amount: "", due: "", iconKey: "tag" });
+    setShowAdd(false);
+    toast.success("Bill added to auto-pay");
+  }
+
+  function removeBill(id: string) {
+    setBills((bs) => bs.filter((b) => b.id !== id));
+  }
+
   useEffect(() => {
     if (!playing) return;
+    if (bills.length === 0) { setPlaying(false); return; }
     if (step >= bills.length) { setPlaying(false); return; }
     setBills((bs) => bs.map((b, i) => (i === step ? { ...b, status: "processing" } : b)));
     timeoutRef.current = setTimeout(() => {
@@ -118,9 +175,12 @@ function AutoBillSection() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Workflow */}
         <Card className="lg:col-span-2">
-          <CardHeader title="Live demo: December payments" right={
-            <div className="flex gap-2">
-              <button onClick={() => setPlaying((p) => !p)} className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold inline-flex items-center gap-1.5">
+          <CardHeader title="Your scheduled bills" right={
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setShowAdd((s) => !s)} className="px-3 py-1.5 rounded-xl bg-accent/20 border border-accent/30 text-xs font-semibold inline-flex items-center gap-1.5">
+                <Plus className="size-3.5" /> Add bill
+              </button>
+              <button onClick={() => setPlaying((p) => !p)} disabled={bills.length === 0} className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
                 {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
                 {playing ? "Pause" : "Run automation"}
               </button>
@@ -130,9 +190,38 @@ function AutoBillSection() {
             </div>
           } />
 
+          {showAdd && (
+            <form onSubmit={addBill} className="mt-4 grid sm:grid-cols-[1fr_110px_110px_auto_auto] gap-2 items-end p-3 rounded-2xl bg-white/5 border border-white/10">
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Bill name</div>
+                <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Phone bill" maxLength={80} className="w-full bg-white/5 rounded-lg px-3 py-2 text-sm outline-none border border-white/10 focus:border-primary/50" />
+              </label>
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Amount</div>
+                <input value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} placeholder="0" inputMode="decimal" className="w-full bg-white/5 rounded-lg px-3 py-2 text-sm outline-none border border-white/10 focus:border-primary/50" />
+              </label>
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Due day</div>
+                <input value={form.due} onChange={(e) => setForm((f) => ({ ...f, due: e.target.value }))} placeholder="15th" maxLength={8} className="w-full bg-white/5 rounded-lg px-3 py-2 text-sm outline-none border border-white/10 focus:border-primary/50" />
+              </label>
+              <label className="text-xs">
+                <div className="text-muted-foreground mb-1">Icon</div>
+                <select value={form.iconKey} onChange={(e) => setForm((f) => ({ ...f, iconKey: e.target.value }))} className="bg-white/5 rounded-lg px-2 py-2 text-sm outline-none border border-white/10">
+                  {ICON_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </label>
+              <button className="px-3 py-2 rounded-lg bg-neon text-primary-foreground text-xs font-semibold shadow-glow inline-flex items-center gap-1.5">
+                <Plus className="size-3.5" /> Save
+              </button>
+            </form>
+          )}
+
           <Steps current={step} total={bills.length} />
 
           <div className="mt-4 space-y-2">
+            {bills.length === 0 && (
+              <div className="text-center text-sm text-muted-foreground py-6">No bills yet — add one above to start automating.</div>
+            )}
             {bills.map((b) => {
               const Icon = b.icon;
               return (
@@ -151,6 +240,9 @@ function AutoBillSection() {
                     {b.status === "processing" && (<><Bolt className="size-3.5 text-info" /> Paying…</>)}
                     {b.status === "paid" && (<><CheckCircle2 className="size-3.5 text-success" /> Paid</>)}
                   </div>
+                  <button onClick={() => removeBill(b.id)} className="size-8 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center" aria-label="Remove bill">
+                    <Trash2 className="size-3.5" />
+                  </button>
                 </div>
               );
             })}
@@ -165,7 +257,7 @@ function AutoBillSection() {
             <Stat label="Auto-paid so far" value={<Money amount={paid} decimals={0} />} tone="ok" />
             <Stat label="Pending" value={<Money amount={total - paid} decimals={0} />} />
             <div className="h-3 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-success to-secondary transition-all" style={{ width: `${(paid / total) * 100}%` }} />
+              <div className="h-full bg-gradient-to-r from-success to-secondary transition-all" style={{ width: `${total > 0 ? (paid / total) * 100 : 0}%` }} />
             </div>
             <p className="text-[11px] text-muted-foreground inline-flex items-baseline gap-1">Late-fee savings estimated this month: <span className="text-success font-semibold inline-flex items-baseline gap-1"><Money amount={75} decimals={0} /></span></p>
           </div>
