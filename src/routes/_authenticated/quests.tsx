@@ -343,8 +343,8 @@ function ReviewQuestModal({ quest, onClose }: { quest: Quest; onClose: () => voi
                 <button onClick={() => setRejecting(true)} className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm inline-flex items-center gap-1.5">
                   <ThumbsDown className="size-3.5" /> Reject
                 </button>
-                <button onClick={() => setShowGate(true)} disabled={busy} className="px-4 py-2 rounded-lg bg-neon text-primary-foreground text-sm font-semibold shadow-glow inline-flex items-center gap-1.5 disabled:opacity-50">
-                  <ScanFace className="size-3.5" /> Approve &amp; pay
+                <button onClick={doApprove} disabled={busy} className="px-4 py-2 rounded-lg bg-neon text-primary-foreground text-sm font-semibold shadow-glow inline-flex items-center gap-1.5 disabled:opacity-50">
+                  <Check className="size-3.5" /> {busy ? "Approving…" : "Approve & pay"}
                 </button>
               </>
             ) : (
@@ -358,13 +358,6 @@ function ReviewQuestModal({ quest, onClose }: { quest: Quest; onClose: () => voi
           </footer>
         </div>
       </div>
-      <PasskeyGate
-        open={showGate}
-        title="Verify to approve payout"
-        detail={`Approving will pay Dh ${Number(quest.reward).toFixed(2)} from your account.`}
-        onClose={() => setShowGate(false)}
-        onSuccess={() => { setShowGate(false); doApprove(); }}
-      />
     </>
   );
 }
